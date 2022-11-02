@@ -46,12 +46,12 @@ sig_y           = sig_x
 
 # Wavefront parameters
 # Wavefront mesh parameters
-Nx 			    = 2**7
+Nx 			    = 2**4
 Ny 			    = Nx
 zSrCalc 	    = 0.0 # Distance from sim start to calc SR. [m]
-xMiddle		    = 0.0 # middle of window in X to calc SR [m]
+xMiddle		    = 2.0*sig_x # middle of window in X to calc SR [m]
 xWidth 		    = 10*sig_x # width of x window. [m]
-yMiddle 	    = 0.0 # middle of window in Y to calc SR [m]
+yMiddle 	    = 2.0*sig_y # middle of window in Y to calc SR [m]
 yWidth 		    = xWidth # width of y window. [m]
 
 # SR integration flags.
@@ -78,7 +78,7 @@ g_Beam.polar        = 1
 g_Beam.avgPhotEn    = photon_e
 
 # Build the wavefront class instance to hold the gaussian beam electric fields
-wfr1 = subSRWLWfr() #For spectrum vs photon energy
+wfr1 = SRWLWfr() #For spectrum vs photon energy
 wfr1.allocate(1, Nx, Ny) #Numbers of points vs Photon Energy, Horizontal and Vertical Positions
 wfr1.mesh.zStart    = zSrCalc #Longitudinal Position [m] from Center of Straight
 # Section at which SR has to be calculated
@@ -90,15 +90,25 @@ wfr1.mesh.yStart 	= yMiddle - yWidth/2.0 #Initial Vertical Position [m]
 wfr1.mesh.yFin 		= yMiddle + yWidth/2.0 #Final Vertical Position [m]
 
 
+wfr2 = deepcopy(wfr1)
+wfr2 = CalcElecFieldGaussianMPI(wfr2, g_Beam)
 
 # Generate the gaussian beam
-# srwl.CalcElecFieldGaussian(wfr1, g_Beam, [0])
-wfr1 = CalcElecFieldGaussianMPI(wfr1, g_Beam)
+srwl.CalcElecFieldGaussian(wfr1, g_Beam, [0])
+
 
 # Extract the photon beam intensity
 arI1 = array('f', [0]*wfr1.mesh.nx*wfr1.mesh.ny)
 srwl.CalcIntFromElecField(arI1, wfr1, 6, 0, 3, wfr1.mesh.eStart, 0, 0)
 B = np.reshape(arI1, [wfr1.mesh.nx, wfr1.mesh.ny])
 
+arI1 = array('f', [0]*wfr2.mesh.nx*wfr2.mesh.ny)
+srwl.CalcIntFromElecField(arI1, wfr2, 6, 0, 3, wfr2.mesh.eStart, 0, 0)
+C = np.reshape(arI1, [wfr2.mesh.nx, wfr2.mesh.ny])
+
 plt.figure(1, facecolor='w')
+plt.subplot(1,2,1)
 plt.imshow(B)
+
+plt.subplot(1,2,2)
+plt.imshow(C)

@@ -25,18 +25,20 @@ from srwlib import *
 
 
 
-def CalcElecFieldGaussianMPI(wfr_in, g_beam_in):
+def CalcElecFieldGaussianMPI(wfr_main, g_beam_in):
     # Hard code some things while I figure out how to do it correctly but
     # want to keep moving on the things I know.
     gx = 2
     gy = 2
     Ns = gx*gy
-    wfr_in.subgrid.gx = gx
-    wfr_in.subgrid.gy = gy
-    wfr_in.set_i_and_j_ranges(0)
-    wfr_in.set_mesh_ranges()
-    srwl.CalcElecFieldGaussian(wfr_in, g_beam_in, [0])
-    return wfr_in
+
+    for s in range(Ns):
+        wfr_sub = deepcopy(wfr_main)
+        wfr_sub = sub_wavefront_from_main_wavefront(s, wfr_sub, gx, gy)
+        srwl.CalcElecFieldGaussian(wfr_sub, g_beam_in, [0])
+        wfr_main = copy_sub_mesh_to_main_mesh(s, wfr_main, gx, gy, wfr_sub)
+
+    return wfr_main
 
 class subSRWLWfr(SRWLWfr):
     def __init__(self, *args, **kwargs):
@@ -111,31 +113,44 @@ def subgrid_by_number(h, Nx, Ny, gx, gy):
 def sub_wavefront_from_main_wavefront(h, wfr_in, gx, gy):
     indices = subgrid_by_number(h, wfr_in.mesh.nx, wfr_in.mesh.ny, gx, gy)
 
-    # Create a new wavefront mesh
-    wfrt = SRWLWfr()
-    # Build the wavefront meshgrid
-    wfrt.allocate(1, wfr_in.mesh.nx // gx, wfr_in.mesh.nx // gy)
-    # Assign synchrotron radiation calculation parameters
-    wfrt.mesh.zStart = wfr_in.mesh.zStart  # Longitudinal Position [m] from Center of
-    # Straight Section at which SR has to be calculated
-    wfrt.mesh.eStart = wfr_in.mesh.eStart  # Initial Photon Energy [eV]
-    wfrt.mesh.eFin = wfr_in.mesh.eFin  # Final Photon Energy [eV]
-
     # Calculate the grid spacing on the input grid
-    deltaX = (wfr_in.mesh.xFin - wfr_in.mesh.xStart) / (wfr_in.mesh.nx - 1)
-    deltaY = (wfr_in.mesh.yFin - wfr_in.mesh.yStart) / (wfr_in.mesh.ny - 0)
+    xWidth  = (wfr_in.mesh.xFin - wfr_in.mesh.xStart)
+    yWidth  = (wfr_in.mesh.yFin - wfr_in.mesh.yStart)
+    deltaX  = xWidth / (wfr_in.mesh.nx - 1)
+    deltaY  = yWidth / (wfr_in.mesh.ny - 1)
+    xMiddle = (wfr_in.mesh.xFin + wfr_in.mesh.xStart) / 2.0
+    yMiddle = (wfr_in.mesh.yFin + wfr_in.mesh.yStart) / 2.0
 
+    # Update the Start and Fin for both axes of the subgrid
+    wfr_in.mesh.xFin = wfr_in.mesh.xStart + indices[1] * deltaX
+    wfr_in.mesh.xStart = wfr_in.mesh.xStart + indices[0] * deltaX
+    wfr_in.mesh.yFin   = wfr_in.mesh.yStart + indices[3] * deltaY
+    wfr_in.mesh.yStart = wfr_in.mesh.yStart + indices[2] * deltaY
 
-    # Update the Start and Fin for both axes
-    wfrt.mesh.xStart = indices[0] * deltaX + wfr_in.mesh.xStart
-    wfrt.mesh.xFin = indices[1] * deltaX + wfr_in.mesh.xStart
-    wfrt.mesh.yStart = indices[2] * deltaY + wfr_in.mesh.yStart
-    wfrt.mesh.yFin = indices[3] * deltaY + wfr_in.mesh.yStart
+    wfr_in.mesh.nx      = wfr_in.mesh.nx // gx
+    wfr_in.mesh.ny      = wfr_in.mesh.ny // gy
+    print("h: " , h, " xStart: ", wfr_in.mesh.xStart, " xFin: ",
+        wfr_in.mesh.xFin) # debug
+    print("h: " , h, " yStart: ", wfr_in.mesh.yStart, " yFin: ",
+        wfr_in.mesh.yFin) # debug
+    return wfr_in
 
-    return wfrt
+# Copy the subgrid fields to the main grid
+def copy_sub_mesh_to_main_mesh(h, wfr_main, gx, gy, wfr_sub):
 
+    for k in range(wfr_sub.mesh.nx):
+        for m in range(wfr_sub.mesh.ny):
+            gamma = 2 * wfr_main.mesh.nx * m + \
+                2 * k + \
+                2 * wfr_main.mesh.nx * (h//gx) * (wfr_main.mesh.ny//gy - 1) + \
+                2 * h * wfr_main.mesh.nx // gx
+            gammaS = 2 * wfr_sub.mesh.nx * m + 2 * k
+            # print("h: ", h, " m: ", m, " k: ", k, " gamma : " , gamma ,
+            # " gammaS:" , gammaS) # debug
+            wfr_main.arEx[gamma] = wfr_sub.arEx[gammaS]
+            wfr_main.arEy[gamma] = wfr_sub.arEy[gammaS]
 
-
+    return wfr_main
 
 # Nx = 2**3
 # Ny = 2**2
