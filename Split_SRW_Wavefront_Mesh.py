@@ -29,7 +29,7 @@ def CalcElecFieldGaussianMPI(wfr_main, g_beam_in):
     # Hard code some things while I figure out how to do it correctly but
     # want to keep moving on the things I know.
     gx = 2
-    gy = 2
+    gy = 1
     Ns = gx*gy
 
     for s in range(Ns):
@@ -39,59 +39,6 @@ def CalcElecFieldGaussianMPI(wfr_main, g_beam_in):
         wfr_main = copy_sub_mesh_to_main_mesh(s, wfr_main, gx, gy, wfr_sub)
 
     return wfr_main
-
-class subSRWLWfr(SRWLWfr):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.subgrid = SRWsubgrid()
-
-    def set_i_and_j_ranges(self, subgrid_num):
-        if subgrid_num < 0 or subgrid_num >= self.subgrid.gx * self.subgrid.gy:
-            raise ValueError('Subgrid number must be between [0, gx*gy-1]')
-
-        self.subgrid.gridNum = subgrid_num
-
-        # I'm going to copy the variables here because otherwise these
-        # calculations are inscrutable
-        Nx = self.mesh.nx
-        Ny = self.mesh.ny
-        gx = self.subgrid.gx
-        gy = self.subgrid.gy
-        h  = self.subgrid.gridNum
-
-        self.subgrid.iMin = (h - gx * (h // gx)) * (Nx / gx)
-        self.subgrid.iMax = self.subgrid.iMin + Nx / gx - 1
-        self.subgrid.jMin = (h // gx) * Ny / gy
-        self.subgrid.jMax = self.subgrid.jMin + Ny / gy - 1
-
-    def set_mesh_ranges(self):
-        xWidth = (self.mesh.xFin - self.mesh.xStart)
-        yWidth = (self.mesh.yFin - self.mesh.yStart)
-        xMiddle = self.mesh.xStart + xWidth / 2.0
-        yMiddle = self.mesh.yStart + yWidth / 2.0
-        deltaX = xWidth / (self.mesh.nx - 1)
-        deltaY = yWidth / (self.mesh.ny - 1)
-
-        # Update the grid physical range parameters
-        self.mesh.xStart = self.subgrid.iMin * deltaX + xMiddle
-        self.mesh.xFin   = self.subgrid.iMax * deltaX + xMiddle
-        self.mesh.yStart = self.subgrid.jMin * deltaY + yMiddle
-        self.mesh.yFin   = self.subgrid.jMax * deltaY + yMiddle
-
-        # Update the mesh sizes
-        self.mesh.nx = self.mesh.nx // self.subgrid.gx
-        self.mesh.ny = self.mesh.ny // self.subgrid.gy
-
-class SRWsubgrid():
-    def __init__(self):
-        self.gridNum    = -1
-        self.iMin       = 0
-        self.iMax       = 0
-        self.jMin       = 0
-        self.jMax       = 0
-        self.gx         = 1
-        self.gy         = 1
-
 
 # This function returns the indices for the subgrid based on processor number.
 def subgrid_by_number(h, Nx, Ny, gx, gy):
@@ -111,28 +58,29 @@ def subgrid_by_number(h, Nx, Ny, gx, gy):
     # will get divide by zero when calculating either of the deltas
 
 def sub_wavefront_from_main_wavefront(h, wfr_in, gx, gy):
+    # if wfr_in.mesh.nx or wfr_in.mesh.ny <= 1:
+    #     raise ValueError('Input wavefront must have mesh size nx and ny >=1')
+
+    if (wfr_in.mesh.nx % 2) or (wfr_in.mesh.ny % 2) != 0:
+        raise ValueError('Input wavefront mesh nx and ny must be even integers')
+
     indices = subgrid_by_number(h, wfr_in.mesh.nx, wfr_in.mesh.ny, gx, gy)
 
     # Calculate the grid spacing on the input grid
-    xWidth  = (wfr_in.mesh.xFin - wfr_in.mesh.xStart)
-    yWidth  = (wfr_in.mesh.yFin - wfr_in.mesh.yStart)
-    deltaX  = xWidth / (wfr_in.mesh.nx - 1)
-    deltaY  = yWidth / (wfr_in.mesh.ny - 1)
-    xMiddle = (wfr_in.mesh.xFin + wfr_in.mesh.xStart) / 2.0
-    yMiddle = (wfr_in.mesh.yFin + wfr_in.mesh.yStart) / 2.0
+    deltaX  = (wfr_in.mesh.xFin - wfr_in.mesh.xStart) / (wfr_in.mesh.nx - 1)
+    deltaY  = (wfr_in.mesh.yFin - wfr_in.mesh.yStart) / (wfr_in.mesh.ny - 1)
 
     # Update the Start and Fin for both axes of the subgrid
     wfr_in.mesh.xFin = wfr_in.mesh.xStart + indices[1] * deltaX
     wfr_in.mesh.xStart = wfr_in.mesh.xStart + indices[0] * deltaX
     wfr_in.mesh.yFin   = wfr_in.mesh.yStart + indices[3] * deltaY
     wfr_in.mesh.yStart = wfr_in.mesh.yStart + indices[2] * deltaY
-
     wfr_in.mesh.nx      = wfr_in.mesh.nx // gx
     wfr_in.mesh.ny      = wfr_in.mesh.ny // gy
-    print("h: " , h, " xStart: ", wfr_in.mesh.xStart, " xFin: ",
-        wfr_in.mesh.xFin) # debug
-    print("h: " , h, " yStart: ", wfr_in.mesh.yStart, " yFin: ",
-        wfr_in.mesh.yFin) # debug
+    # print("h: " , h, " xStart: ", wfr_in.mesh.xStart, " xFin: ",
+    #     wfr_in.mesh.xFin) # debug
+    # print("h: " , h, " yStart: ", wfr_in.mesh.yStart, " yFin: ",
+    #     wfr_in.mesh.yFin) # debug
     return wfr_in
 
 # Copy the subgrid fields to the main grid
@@ -152,10 +100,4 @@ def copy_sub_mesh_to_main_mesh(h, wfr_main, gx, gy, wfr_sub):
 
     return wfr_main
 
-# Nx = 2**3
-# Ny = 2**2
-# gx = 2
-# gy = 2
-#
-# for i in range(gx*gy):
-#     print(subgrid_by_number(i, Nx, Ny, gx, gy))
+

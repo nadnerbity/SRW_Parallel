@@ -46,7 +46,7 @@ sig_y           = sig_x
 
 # Wavefront parameters
 # Wavefront mesh parameters
-Nx 			    = 2**4
+Nx 			    = 2**7
 Ny 			    = Nx
 zSrCalc 	    = 0.0 # Distance from sim start to calc SR. [m]
 xMiddle		    = 2.0*sig_x # middle of window in X to calc SR [m]
