@@ -23,21 +23,73 @@ import sys
 sys.path.insert(0, '/home/brendan/SRW/env/work/srw_python') # To find the SRW python libraries.
 from srwlib import *
 
+
+
+def CalcElecFieldGaussianMPI(wfr_in, g_beam_in):
+    # Hard code some things while I figure out how to do it correctly but
+    # want to keep moving on the things I know.
+    gx = 2
+    gy = 2
+    Ns = gx*gy
+    wfr_in.subgrid.gx = gx
+    wfr_in.subgrid.gy = gy
+    wfr_in.set_i_and_j_ranges(0)
+    wfr_in.set_mesh_ranges()
+    srwl.CalcElecFieldGaussian(wfr_in, g_beam_in, [0])
+    return wfr_in
+
 class subSRWLWfr(SRWLWfr):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.subgrid = SRWsubgrid()
 
+    def set_i_and_j_ranges(self, subgrid_num):
+        if subgrid_num < 0 or subgrid_num >= self.subgrid.gx * self.subgrid.gy:
+            raise ValueError('Subgrid number must be between [0, gx*gy-1]')
+
+        self.subgrid.gridNum = subgrid_num
+
+        # I'm going to copy the variables here because otherwise these
+        # calculations are inscrutable
+        Nx = self.mesh.nx
+        Ny = self.mesh.ny
+        gx = self.subgrid.gx
+        gy = self.subgrid.gy
+        h  = self.subgrid.gridNum
+
+        self.subgrid.iMin = (h - gx * (h // gx)) * (Nx / gx)
+        self.subgrid.iMax = self.subgrid.iMin + Nx / gx - 1
+        self.subgrid.jMin = (h // gx) * Ny / gy
+        self.subgrid.jMax = self.subgrid.jMin + Ny / gy - 1
+
+    def set_mesh_ranges(self):
+        xWidth = (self.mesh.xFin - self.mesh.xStart)
+        yWidth = (self.mesh.yFin - self.mesh.yStart)
+        xMiddle = self.mesh.xStart + xWidth / 2.0
+        yMiddle = self.mesh.yStart + yWidth / 2.0
+        deltaX = xWidth / (self.mesh.nx - 1)
+        deltaY = yWidth / (self.mesh.ny - 1)
+
+        # Update the grid physical range parameters
+        self.mesh.xStart = self.subgrid.iMin * deltaX + xMiddle
+        self.mesh.xFin   = self.subgrid.iMax * deltaX + xMiddle
+        self.mesh.yStart = self.subgrid.jMin * deltaY + yMiddle
+        self.mesh.yFin   = self.subgrid.jMax * deltaY + yMiddle
+
+        # Update the mesh sizes
+        self.mesh.nx = self.mesh.nx // self.subgrid.gx
+        self.mesh.ny = self.mesh.ny // self.subgrid.gy
+
 class SRWsubgrid():
     def __init__(self):
-        self.gridNum = -1
-        self.iMin = 0
-        self.iMax = 0
-        self.jMin = 0
-        self.jMax = 0
+        self.gridNum    = -1
+        self.iMin       = 0
+        self.iMax       = 0
+        self.jMin       = 0
+        self.jMax       = 0
+        self.gx         = 1
+        self.gy         = 1
 
-    def set_i_and_i_ranges(self):
-        pass
 
 # This function returns the indices for the subgrid based on processor number.
 def subgrid_by_number(h, Nx, Ny, gx, gy):

@@ -89,8 +89,11 @@ wfr1.mesh.xFin 		= xMiddle + xWidth/2.0 #Final Horizontal Position [m]
 wfr1.mesh.yStart 	= yMiddle - yWidth/2.0 #Initial Vertical Position [m]
 wfr1.mesh.yFin 		= yMiddle + yWidth/2.0 #Final Vertical Position [m]
 
-# Propagate the gaussian beam
-srwl.CalcElecFieldGaussian(wfr1, g_Beam, [0])
+
+
+# Generate the gaussian beam
+# srwl.CalcElecFieldGaussian(wfr1, g_Beam, [0])
+wfr1 = CalcElecFieldGaussianMPI(wfr1, g_Beam)
 
 # Extract the photon beam intensity
 arI1 = array('f', [0]*wfr1.mesh.nx*wfr1.mesh.ny)
