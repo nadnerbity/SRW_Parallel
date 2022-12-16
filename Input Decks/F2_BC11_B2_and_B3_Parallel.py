@@ -12,6 +12,7 @@ import sys
 #sys.path.insert(0, '/Users/brendan/Documents/FACET/SRW/SRW-light/env/work/srw_python') # To find the SRW python libraries.
 sys.path.insert(0, '/scratch/brendan/SRW/SRW/env/work/srw_python') # To find
 # the SRW python libraries.
+sys.path.insert(0, '/scratch/brendan/SRW_Parallel/SRW_Parallel')
 
 
 
@@ -208,31 +209,10 @@ if __name__ == '__main__':
     # copy the resulting wavefront for safe keeping
     wfr1 = deepcopy(wfr)
 
-    # Run vanilla SRW
-    # start_time = time.time()
-    # srwl.CalcElecFieldSR(wfr1, 0, magFldCnt, arPrecPar)
-    # print('------ %s seconds to execute single processor SRW -----' % (
-    #         time.time() - start_time))
-
-    # Perform the same simulation but using N processors.
+    # Perform the simulation but using N processors.
     wfr2 = CalcElecFieldGaussianMPI(wfr, magFldCnt, arPrecPar)
 
-    # Extract the single simulation intensity pattern.
-    arI1 = array('f', [0] * wfr1.mesh.nx * wfr1.mesh.ny)
-    srwl.CalcIntFromElecField(arI1, wfr1, 6, 0, 3, wfr1.mesh.eStart, 0, 0)
-    Single_Proc = np.reshape(arI1, [wfr1.mesh.nx, wfr1.mesh.ny])
+    # Save the wavefront to a file.
+    filename = 'F2_BC11_B2_and_B3'
+    dump_srw_wavefront(filename, wfr2)
 
-    # Extract the MPI simulation intensity pattern.
-    arI1 = array('f', [0] * wfr2.mesh.nx * wfr2.mesh.ny)
-    srwl.CalcIntFromElecField(arI1, wfr2, 6, 0, 3, wfr2.mesh.eStart, 0, 0)
-    Multi_Proc = np.reshape(arI1, [wfr2.mesh.nx, wfr2.mesh.ny])
-
-    # Plot the result for comparison.
-    plt.figure(1, facecolor='w')
-    plt.subplot(1,2,1)
-    plt.imshow(Single_Proc)
-    plt.title('Single Processor')
-
-    plt.subplot(1,2,2)
-    plt.imshow(Multi_Proc)
-    plt.title('Multiple Processors')

@@ -209,10 +209,10 @@ if __name__ == '__main__':
     wfr1 = deepcopy(wfr)
 
     # Run vanilla SRW
-    # start_time = time.time()
-    # srwl.CalcElecFieldSR(wfr1, 0, magFldCnt, arPrecPar)
-    # print('------ %s seconds to execute single processor SRW -----' % (
-    #         time.time() - start_time))
+    start_time = time.time()
+    srwl.CalcElecFieldSR(wfr1, 0, magFldCnt, arPrecPar)
+    print('------ %s seconds to execute single processor SRW -----' % (
+            time.time() - start_time))
 
     # Perform the same simulation but using N processors.
     wfr2 = CalcElecFieldGaussianMPI(wfr, magFldCnt, arPrecPar)

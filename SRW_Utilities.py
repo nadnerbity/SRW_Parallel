@@ -235,7 +235,7 @@ def dump_srw_wavefront(filename, wfr):
     :param wfr: SRW wavefront to dump
     :return: nothing
     """
-    filename = filename + '.pickle'
+    filename = filename + '.pkl'
     f = open(filename, 'wb')
     pickle.dump(wfr, f)
     f.close()
@@ -247,7 +247,7 @@ def load_srw_wavefront(filename):
     :param filename: name of the file to load from (string)
     :return: SRW wavefront that was loaded
     """
-    filename = filename + '.pickle'
+    filename = filename + '.pkl'
     f = open(filename, 'rb')
     wfr = pickle.load(f)
     f.close()
