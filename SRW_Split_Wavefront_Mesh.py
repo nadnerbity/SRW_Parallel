@@ -257,18 +257,6 @@ def copy_sub_mesh_to_main_mesh(h, wfr_main, gx, gy, wfr_sub):
 
     return wfr_main
 
-def dump_sub_mesh(h, wfr_sub):
-    filename = 'temp_' + str(h) + '.pickle'
-    f = open(filename, 'wb')
-    pickle.dump(wfr_sub, f)
-    f.close()
 
-def load_sub_mesh(h):
-    filename = 'temp_' + str(h) + '.pickle'
-    f = open(filename, 'rb')
-    wfr_sub = pickle.load(f)
-    f.close()
-    os.remove(filename)
-    return wfr_sub
 
 

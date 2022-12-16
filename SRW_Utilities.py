@@ -224,7 +224,31 @@ def set_initial_offset_and_angle(partTraj_1, magFldCnt, trajPrecPar):
           " [mm]")
 
 
-
     return partTraj_1
 
 
+def dump_srw_wavefront(filename, wfr):
+    """
+    Dump SRW wavefront to a pickle file
+
+    :param filename: name of the file to dump to (string)
+    :param wfr: SRW wavefront to dump
+    :return: nothing
+    """
+    filename = filename + '.pickle'
+    f = open(filename, 'wb')
+    pickle.dump(wfr, f)
+    f.close()
+
+def load_srw_wavefront(filename):
+    """
+    Load and SRW wavefront from a pickle file
+
+    :param filename: name of the file to load from (string)
+    :return: SRW wavefront that was loaded
+    """
+    filename = filename + '.pickle'
+    f = open(filename, 'rb')
+    wfr = pickle.load(f)
+    f.close()
+    return wfr
