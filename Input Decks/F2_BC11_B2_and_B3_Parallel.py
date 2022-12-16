@@ -76,13 +76,13 @@ def F2_BC11_B2_and_B3():
 
     # Wavefront parameters
     # Wavefront mesh parameters
-    Nx 			    = 2**9
+    Nx 			    = 2**13
     Ny 			    = Nx
     B3_phys_edge    = entry_drift + 1.6*3*L_edge + L_Bend + Bend_sep # The
     # physical edge of B3 (i.e. where the field has just become flat.)
     zSrCalc 	    = B3_phys_edge + 0.8209 # Distance from sim start to calc SR. [m]
     xMiddle		    = 0.0 # middle of window in X to calc SR [m]
-    xWidth 		    = 0.04 # width of x window. [m]
+    xWidth 		    = 0.08 # width of x window. [m]
     yMiddle 	    = 0.00 # middle of window in Y to calc SR [m]
     yWidth 		    = xWidth # width of y window. [m]
 

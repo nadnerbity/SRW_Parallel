@@ -24,6 +24,12 @@ sys.path.insert(0, '/scratch/brendan/SRW/SRW/env/work/srw_python') # To find
 # the SRW python libraries.
 from srwlib import *
 import pickle
+import numpy as np
+from mpi4py import MPI
+import matplotlib.pyplot as plt
+plt.close('all')
+plt.ion()
+
 
 
 
@@ -227,7 +233,7 @@ def set_initial_offset_and_angle(partTraj_1, magFldCnt, trajPrecPar):
     return partTraj_1
 
 
-def dump_srw_wavefront(filename, wfr):
+def dump_srw_wavefront(filename, wfr_in):
     """
     Dump SRW wavefront to a pickle file
 
@@ -235,10 +241,14 @@ def dump_srw_wavefront(filename, wfr):
     :param wfr: SRW wavefront to dump
     :return: nothing
     """
-    filename = filename + '.pkl'
-    f = open(filename, 'wb')
-    pickle.dump(wfr, f)
-    f.close()
+    comm = MPI.COMM_WORLD
+    rank = comm.Get_rank()
+    if rank == 0:
+        filename = filename + '.pkl'
+        f = open(filename, 'wb')
+        pickle.dump(wfr_in, f)
+        f.close()
+
 
 def load_srw_wavefront(filename):
     """
@@ -252,3 +262,120 @@ def load_srw_wavefront(filename):
     wfr = pickle.load(f)
     f.close()
     return wfr
+
+
+def convert_Efield_to_intensity(wfr1):
+    """
+    # SRW stores fields in a linear array, but you want to plot intensity as an
+    # image. SRW stores the data as Er1, Ei1, Er2, Ei2, Er3, Ei3...
+    # Which means it stores the fields alternating between real and imaginary.
+
+    # This does the same thing as:
+    arI1 = array('f', [0] * wfr1.mesh.nx * wfr1.mesh.ny)
+    srwl.CalcIntFromElecField(arI1, wfr1, 6, 0, 3, wfr1.mesh.eStart, 0, 0)
+    II = np.reshape(arI1, [wfr1.mesh.nx, wfr1.mesh.ny])
+
+    :param wfr1: Wavefront to extract the intensity from.
+    :return: Intensity of the wavefront
+    """
+    Nx = wfr1.mesh.nx
+    Ny = wfr1.mesh.ny
+
+    II = np.zeros((Ny, Nx))
+    for i in range(Nx):
+        for j in range(Ny):
+            II[j, i] = wfr1.arEx[2 * (Nx * j + i)] ** 2 + \
+                       wfr1.arEx[2 * (Nx * j + i) + 1] ** 2 + \
+                       wfr1.arEy[2 * (Nx * j + i)] ** 2 + \
+                       wfr1.arEy[2 * (Nx * j + i) + 1] ** 2
+
+    # # # This shows how the indexing works
+    # Nx = 4
+    # Ny = 3
+    # III = np.zeros((Ny, Nx))
+    # for i in range(Nx):
+    #     for j in range(Ny):
+    #         # print(str( 2 * (Nx * j + i) ))
+    #         III[j, i] = 2 * (Nx * j + i)
+
+    return II
+
+
+def convert_srw_linear_fields_to_matrix_fields(wfr1):
+    """
+    # Convert the SRW linear data type to a matrix (my brain works in images). It
+    #  takes in a wavefront and returns 4 matrices, real(Ex), imaginary(Ex),
+    # real(Ey) and imaginary(Ey). The output is a numpy array of size (Ny, Nx, 4)
+
+    :param wfr1: SRW wavefront to convert to a matrix
+    :return: Numpy matrix of the field (nx x ny x 4)
+    """
+    Nx = wfr1.mesh.nx
+    Ny = wfr1.mesh.ny
+
+    II = np.zeros((Ny, Nx, 4))
+    for i in range(Nx):
+        for j in range(Ny):
+            II[j, i, 0] = wfr1.arEx[2 * (Nx * j + i)]
+            II[j, i, 1] = wfr1.arEx[2 * (Nx * j + i) + 1]
+            II[j, i, 2] = wfr1.arEy[2 * (Nx * j + i)]
+            II[j, i, 3] = wfr1.arEy[2 * (Nx * j + i) + 1]
+
+    return II
+
+
+def convert_matrix_fields_to_srw_linear_fields(II, wfr1):
+    """
+    Convert an (nx x ny x 4) matrix of electric fields into an SRW style set
+    of Ex and Ey fields.
+
+    :param II: Electric fields in format (nx x ny x 4)
+    See 'convert_srw_linear_fields_to_matrix_fields'
+    :param wfr1: SRW wavefront to deposit the fields onto
+    :return: SRW wavefront with the fields deposited on it
+    """
+    Nx = wfr1.mesh.nx
+    Ny = wfr1.mesh.ny
+
+    if (II.shape[0] != Ny or II.shape[1] != Nx):
+        raise IndexError('Matrix field shape and wavefront shape do not '
+                         'agree. Matrix field shape is ' + str(II.shape) \
+                         + ' srw mesh is (' + str(Ny) +',' + str(Nx) + ')'
+                         )
+
+    for i in range(Nx):
+        for j in range(Ny):
+            wfr1.arEx[2 * (Nx * j + i)] = II[j, i, 0]
+            wfr1.arEx[2 * (Nx * j + i) + 1] = II[j, i, 1]
+            wfr1.arEy[2 * (Nx * j + i)] = II[j, i, 2]
+            wfr1.arEy[2 * (Nx * j + i) + 1] = II[j, i, 3]
+
+    return wfr1
+
+
+def plot_SRW_intensity(wfr1):
+    Nx = wfr1.mesh.nx
+    Ny = wfr1.mesh.ny
+    xMin = 1e3 * wfr1.mesh.xStart
+    xMax = 1e3 * wfr1.mesh.xFin
+    yMin = 1e3 * wfr1.mesh.yStart
+    yMax = 1e3 * wfr1.mesh.yFin
+    # xgv = np.linspace(xMin, xMax, Nx)
+    # ygv = np.linspace(yMin, yMax, Ny)
+
+    # Extract the single particle intensity
+    arI1 = array('f', [0] * wfr1.mesh.nx * wfr1.mesh.ny)
+    srwl.CalcIntFromElecField(arI1, wfr1, 6, 0, 3, wfr1.mesh.eStart, 0, 0)
+    B = np.reshape(arI1, [Ny, Nx])
+
+    plt.figure(2, facecolor='w')
+
+    plt.imshow(B, extent=[xMin, xMax, yMin, yMax])
+    plt.gca().set_aspect((xMax - xMin) / (yMax - yMin))
+    plt.xlabel("x [mm]", fontsize=20)
+    plt.ylabel("y [mm]", fontsize=20)
+    plt.clim([0, np.max(B)])
+    plt.title("SRW Intensity", fontsize=20)
+    plt.tight_layout()
+
+

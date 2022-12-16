@@ -71,7 +71,7 @@ def CalcElecFieldGaussianMPI(wfr_main, magFldCnt, arPrecPar):
     wfr_sub = sub_wavefront_from_main_wavefront(rank, wfr_empty, gx, gy)
     # Run the simulation
     srwl.CalcElecFieldSR(wfr_sub, 0, magFldCnt, arPrecPar)
-    print('Time for one MPI Simulation', time.time() - start)
+    print('Time for each MPI Simulation', time.time() - start)
 
     # Hold here until all processors are done.
     comm.Barrier()
