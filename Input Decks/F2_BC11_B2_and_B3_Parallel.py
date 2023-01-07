@@ -76,7 +76,7 @@ def F2_BC11_B2_and_B3():
 
     # Wavefront parameters
     # Wavefront mesh parameters
-    Nx 			    = 2**13
+    Nx 			    = 2**11
     Ny 			    = Nx
     B3_phys_edge    = entry_drift + 1.6*3*L_edge + L_Bend + Bend_sep # The
     # physical edge of B3 (i.e. where the field has just become flat.)
@@ -213,6 +213,6 @@ if __name__ == '__main__':
     wfr2 = CalcElecFieldGaussianMPI(wfr, magFldCnt, arPrecPar)
 
     # Save the wavefront to a file.
-    filename = 'F2_BC11_B2_and_B3'
+    filename = 'F2_BC11_B2_and_B3_Nx_2048'
     dump_srw_wavefront(filename, wfr2)
 
