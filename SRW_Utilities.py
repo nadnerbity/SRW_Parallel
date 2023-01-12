@@ -353,7 +353,7 @@ def convert_matrix_fields_to_srw_linear_fields(II, wfr1):
     return wfr1
 
 
-def plot_SRW_intensity(wfr1):
+def plot_SRW_intensity(wfr1, fig_num=2):
     Nx = wfr1.mesh.nx
     Ny = wfr1.mesh.ny
     xMin = 1e3 * wfr1.mesh.xStart
@@ -368,7 +368,7 @@ def plot_SRW_intensity(wfr1):
     srwl.CalcIntFromElecField(arI1, wfr1, 6, 0, 3, wfr1.mesh.eStart, 0, 0)
     B = np.reshape(arI1, [Ny, Nx])
 
-    plt.figure(2, facecolor='w')
+    plt.figure(fig_num, facecolor='w')
 
     plt.imshow(B, extent=[xMin, xMax, yMin, yMax])
     plt.gca().set_aspect((xMax - xMin) / (yMax - yMin))
@@ -378,4 +378,48 @@ def plot_SRW_intensity(wfr1):
     plt.title("SRW Intensity", fontsize=20)
     plt.tight_layout()
 
+def plot_two_SRW_intensity(wfr1, wfr2, title1="Input 1", title2="Input 2",
+                           fig_num=2):
+    Nx = wfr1.mesh.nx
+    Ny = wfr1.mesh.ny
+    xMin1 = 1e3 * wfr1.mesh.xStart
+    xMax1 = 1e3 * wfr1.mesh.xFin
+    yMin1 = 1e3 * wfr1.mesh.yStart
+    yMax1 = 1e3 * wfr1.mesh.yFin
 
+    # Extract the single particle intensity
+    arI1 = array('f', [0] * wfr1.mesh.nx * wfr1.mesh.ny)
+    srwl.CalcIntFromElecField(arI1, wfr1, 6, 0, 3, wfr1.mesh.eStart, 0, 0)
+    B = np.reshape(arI1, [Ny, Nx])
+
+    Nx = wfr2.mesh.nx
+    Ny = wfr2.mesh.ny
+    xMin2 = 1e3 * wfr2.mesh.xStart
+    xMax2 = 1e3 * wfr2.mesh.xFin
+    yMin2 = 1e3 * wfr2.mesh.yStart
+    yMax2 = 1e3 * wfr2.mesh.yFin
+
+    # Extract the single particle intensity
+    arI1 = array('f', [0] * wfr2.mesh.nx * wfr2.mesh.ny)
+    srwl.CalcIntFromElecField(arI1, wfr2, 6, 0, 3, wfr2.mesh.eStart, 0, 0)
+    C = np.reshape(arI1, [Ny, Nx])
+
+    plt.figure(fig_num, facecolor='w')
+
+    plt.subplot(1,2,1)
+    plt.imshow(B, extent=[xMin1, xMax1, yMin1, yMax1])
+    plt.gca().set_aspect((xMax1 - xMin1) / (yMax1 - yMin1))
+    plt.xlabel("x [mm]", fontsize=20)
+    plt.ylabel("y [mm]", fontsize=20)
+    plt.clim([0, np.max(B)])
+    plt.title(title1, fontsize=20)
+
+
+    plt.subplot(1,2,2)
+    plt.imshow(C, extent=[xMin2, xMax2, yMin2, yMax2])
+    plt.gca().set_aspect((xMax2 - xMin2) / (yMax2 - yMin2))
+    plt.xlabel("x [mm]", fontsize=20)
+    plt.ylabel("y [mm]", fontsize=20)
+    plt.clim([0, np.max(C)])
+    plt.title(title2, fontsize=20)
+    plt.tight_layout()

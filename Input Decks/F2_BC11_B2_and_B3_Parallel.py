@@ -37,7 +37,7 @@ t0 = time.time()
 
 
 ########################## SETUP THE SIM ###########
-def F2_BC11_B2_and_B3():
+def F2_BC11_B2_and_B3(_Nx):
     """
     # Setup the simulation for the B2 and B3 magnets in BC11. This is a
     simulation for testing purposes. SRW documentation will help decypher
@@ -76,13 +76,13 @@ def F2_BC11_B2_and_B3():
 
     # Wavefront parameters
     # Wavefront mesh parameters
-    Nx 			    = 2**11
+    Nx 			    = _Nx
     Ny 			    = Nx
     B3_phys_edge    = entry_drift + 1.6*3*L_edge + L_Bend + Bend_sep # The
     # physical edge of B3 (i.e. where the field has just become flat.)
     zSrCalc 	    = B3_phys_edge + 0.8209 # Distance from sim start to calc SR. [m]
     xMiddle		    = 0.0 # middle of window in X to calc SR [m]
-    xWidth 		    = 0.08 # width of x window. [m]
+    xWidth 		    = 0.08*1.0 # width of x window. [m]
     yMiddle 	    = 0.00 # middle of window in Y to calc SR [m]
     yWidth 		    = xWidth # width of y window. [m]
 
@@ -203,8 +203,9 @@ def F2_BC11_B2_and_B3():
 
 if __name__ == '__main__':
 
+    nx = 2**11
     # Prepare the simulation
-    wfr, magFldCnt, arPrecPar = F2_BC11_B2_and_B3()
+    wfr, magFldCnt, arPrecPar = F2_BC11_B2_and_B3(nx)
 
     # copy the resulting wavefront for safe keeping
     wfr1 = deepcopy(wfr)
@@ -213,6 +214,6 @@ if __name__ == '__main__':
     wfr2 = CalcElecFieldGaussianMPI(wfr, magFldCnt, arPrecPar)
 
     # Save the wavefront to a file.
-    filename = 'F2_BC11_B2_and_B3_Nx_2048'
+    filename = 'F2_BC11_B2_and_B3_Nx_' + str(nx)
     dump_srw_wavefront(filename, wfr2)
 

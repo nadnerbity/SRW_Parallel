@@ -37,7 +37,7 @@ plt.ion()
 if __name__ == '__main__':
 
     # Save the wavefront to a file.
-    filename = 'F2_BC11_B2_and_B3_Nx_2048'
+    filename = 'F2_BC11_B2_and_B3_Nx_4096'
     wfr = load_srw_wavefront(filename)
 
     # plot_SRW_intensity(wfr)
@@ -49,29 +49,29 @@ if __name__ == '__main__':
     wfr_out = deepcopy(wfr)
     focal_length = 0.105 # in meters
     prop_distance = 0.105 # in meters
+    reres = 1.0
+    params = [0, 1, 1., 1, 0, 1., reres**(1/3), 1., reres**(1/3), 0, 0, 0]
 
     a_drift = SRWLOptC(
-        [SRWLOptA( 'c', 'a', 0.0381, 0, 0, 0),
-         SRWLOptD(2.0*prop_distance),
+        [SRWLOptA(_shape = 'c', _ap_or_ob = 'a', _Dx = 0.075),
          SRWLOptL(focal_length, focal_length),
          SRWLOptD(prop_distance)],
-        [[1, 0, 1.0, 1.0, 0, 1.0, 1.0, 1.0, 1.0],
-         [1, 0, 1.0, 1.0, 0, 1.0, 1.0, 1.0, 1.0],
-         [1, 0, 1.0, 1.0, 0, 1.0, 1.0, 1.0, 1.0],
-         [1, 0, 1.0, 1.0, 0, 1.0, 1.0, 1.0, 1.0]])
+        [params, params, params])
     srwl.PropagElecField(wfr_out, a_drift)
 
-    # a_drift = SRWLOptC(
-    #     [SRWLOptA( 'c', 'a', 0.0381, 0, 0, 0),
-    #      SRWLOptD(2.0*prop_distance)],
-    #     [[1, 0, 1.0, 1.0, 0, 1.0, 1.0, 1.0, 1.0],
-    #      [1, 0, 1.0, 1.0, 0, 1.0, 1.0, 1.0, 1.0]])
-    # srwl.PropagElecField(wfr_out, a_drift)
 
     time_str = "Run time: %.2f seconds." % (time.time() - t0)
     print(time_str)
 
-    plot_SRW_intensity(wfr_out)
+    print("")
+    print('params: ' + str(params))
+    print('Input Nx = Ny = ', wfr.mesh.nx)
+    print('Ouput Nx = Ny = ', wfr_out.mesh.nx)
+    print('Input xWdith = yWidth =  ', wfr.mesh.xFin - wfr.mesh.xStart, ' [m]')
+    print('Output xWdith = yWidth =  ', wfr_out.mesh.xFin - wfr_out.mesh.xStart,
+          ' [m]')
+
+    plot_SRW_intensity(wfr_out, 2)
 
   #*****Propagation Parameters for the Optical Elements
   #Meaning of the array element below:
