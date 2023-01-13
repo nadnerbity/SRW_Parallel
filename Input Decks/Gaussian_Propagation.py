@@ -39,16 +39,16 @@ plt.ion()
 # Define the laser beam parameters
 
 photon_lam 	    = 800.0e-9 # Photon energy in eV
-sig_x           = 100.0e-6
+sig_x           = 0.8e-3
 sig_y           = sig_x
 
 # Define the parameters for the wavefront object that will hold the gaussian
 # beam
-Nx 			    = 2**6
+Nx 			    = 2**13
 Ny 			    = Nx
 zSrCalc 	    = 0.0 # Distance from sim start to calc SR. [m]
 xMiddle		    = 0.0*sig_x # middle of window in X to calc SR [m]
-xWidth 		    = 20*sig_x # width of x window. [m]
+xWidth 		    = 20*sig_x*2**(1/2) # width of x window. [m]
 yMiddle 	    = 0.0*sig_y # middle of window in Y to calc SR [m]
 yWidth 		    = xWidth # width of y window. [m]
 
@@ -94,21 +94,48 @@ srwl.CalcElecFieldGaussian(wfr1, g_Beam, [0])
 wfr2 = deepcopy(wfr1)
 
 focal_length = 0.105  # in meters
-prop_distance = 1.0*0.105  # in meters
+prop_distance = 0.105  # in meters
 reres = 1.0
-params = [0, 0, 1., 0, 0, 1., 1., 1., 1., 0, 0, 0]
+#                [0][1][2] [3][4] [5] [6] [7] [8]
+propagParApp  =  [0, 0, 1., 0, 0, 1., 1., 1., 1., 0, 0, 0]
+propagParLens =  [0, 0, 1., 0, 0, 1., 1., 1., 1., 0, 0, 0]
+propagParDrift = [0, 0, 1., 0, 0, 1., 1., 1., 1., 0, 0, 0]
 
-aper = SRWLOptA(_shape='c', _ap_or_ob='a', _Dx=0.0005)
+aper = SRWLOptA(_shape='c', _ap_or_ob='a', _Dx=0.1)
 lens = SRWLOptL(focal_length, focal_length)
 drift = SRWLOptD(prop_distance)
 
 a_drift = SRWLOptC(
     [aper, lens, drift],
-    [params, params, params])
+    [propagParApp, propagParLens, propagParDrift])
 srwl.PropagElecField(wfr2, a_drift)
+
+print("")
+print('propagParApp: ' + str(propagParApp))
+print('propagParLens: ' + str(propagParLens))
+print('propagParDrift: ' + str(propagParDrift))
+print('Input Nx, Ny = ', wfr1.mesh.nx, ", ", wfr1.mesh.ny)
+print('Ouput Nx, Ny = ', wfr2.mesh.nx, ", ", wfr2.mesh.ny)
+print('Input xWdith = yWidth =  ', wfr1.mesh.xFin - wfr1.mesh.xStart, "," ,
+      wfr1.mesh.yFin - wfr1.mesh.yStart,
+      ' [m]')
+print('Output xWdith = yWidth =  ', wfr2.mesh.xFin - wfr2.mesh.xStart, "," ,
+      wfr2.mesh.yFin - wfr2.mesh.yStart,
+      ' [m]')
 
 plot_two_SRW_intensity(wfr1, wfr2, title1="Before PO", title2="After PO",
                            fig_num=20)
+
+plt.figure(10)
+plt.plot()
+
+# wfr3 = deepcopy(wfr2)
+# resize_params = [0, 1, 2, 1, 2, 0.5, 0.5]
+# srwl.ResizeElecField(wfr3, 'c', resize_params)
+#
+# plot_two_SRW_intensity(wfr2, wfr3, title1="Before Resize", title2="After "
+#                                                                   "Resize",
+#                            fig_num=21)
 
 
 # # Extract the photon beam intensity to compare the MPI method to the method
