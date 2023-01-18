@@ -326,10 +326,10 @@ def convert_srw_linear_fields_to_matrix_fields(wfr1):
 
 def convert_matrix_fields_to_srw_linear_fields(II, wfr1):
     """
-    Convert an (nx x ny x 4) matrix of electric fields into an SRW style set
+    Convert an (ny x nx x 4) matrix of electric fields into an SRW style set
     of Ex and Ey fields.
 
-    :param II: Electric fields in format (nx x ny x 4)
+    :param II: Electric fields in format (ny x nx x 4)
     See 'convert_srw_linear_fields_to_matrix_fields'
     :param wfr1: SRW wavefront to deposit the fields onto
     :return: SRW wavefront with the fields deposited on it
