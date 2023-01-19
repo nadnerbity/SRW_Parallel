@@ -376,6 +376,7 @@ def plot_SRW_intensity(wfr1, fig_num=2):
     plt.ylabel("y [mm]", fontsize=20)
     plt.clim([0, np.max(B)])
     plt.title("SRW Intensity", fontsize=20)
+    plt.set_cmap('jet')
     plt.tight_layout()
 
 def plot_two_SRW_intensity(wfr1, wfr2, title1="Input 1", title2="Input 2",
