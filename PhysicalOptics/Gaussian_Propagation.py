@@ -27,6 +27,7 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 import time
+import FourierOptics as FO
 # import h5py
 # Some matplotlib settings.
 plt.close('all')
@@ -43,7 +44,7 @@ sig_y           = sig_x
 
 # Define the parameters for the wavefront object that will hold the gaussian
 # beam
-Nx 			    = 2**10
+Nx 			    = 2**11
 Ny 			    = Nx
 zSrCalc 	    = 0.0 # Distance from sim start to calc SR. [m]
 xMiddle		    = 0.0*sig_x # middle of window in X to calc SR [m]
@@ -94,4 +95,91 @@ I = convert_srw_linear_fields_to_matrix_fields(wfr1)
 
 plot_SRW_intensity(wfr1, fig_num=10)
 
+
+# Simulation parameters
+focal_length = 0.1
+prop_distance = 0.1  # in meters
+
+
+# Apply a lens phase using Brendan's FO ----------------------------------------
+# Build the physical spaces for the FO
+t0 = time.time()
+xgv = np.linspace(wfr1.mesh.xStart, wfr1.mesh.xFin, wfr1.mesh.nx)
+ygv = np.linspace(wfr1.mesh.yStart, wfr1.mesh.yFin, wfr1.mesh.ny)
+[XX, YY] = np.meshgrid(xgv, ygv)
+kappa_0 = 2*np.pi / photon_lam
+
 EM = convert_srw_linear_fields_to_matrix_fields(wfr1)
+# Convert the real + complex parts into complex fields
+Ex = EM[:,:,0] + 1j*EM[:,:,1] # The Ex part
+
+# Apply the lens phase
+ZZ = FO.FO_lens(XX, YY, Ex, kappa_0, focal_length)
+# Propagate
+ZZ = FO.FO_TwoD_exact_SM(xgv, ygv, ZZ, prop_distance, photon_lam)
+
+time_str = "Brendan FO Run time: %.2f seconds." % (time.time() - t0)
+print(time_str)
+
+# Apply a lens phase using SRW -------------------------------------------------
+t0 = time.time()
+
+wfr2 = deepcopy(wfr1)
+propagParLens =  [0, 0, 1., 0, 0, 1., 1., 1., 1., 0, 0, 0]
+lens = SRWLOptL(focal_length, focal_length)
+drift = SRWLOptD(prop_distance)
+a_drift = SRWLOptC(
+    [lens, drift],
+    [propagParLens, propagParLens])
+srwl.PropagElecField(wfr2, a_drift)
+
+EM = convert_srw_linear_fields_to_matrix_fields(wfr2)
+# Convert the real + complex parts into complex fields
+Ex = EM[:,:,0] + 1j*EM[:,:,1] # The Ex part
+
+time_str = "SRW FO Run time: %.2f seconds." % (time.time() - t0)
+print(time_str)
+
+# Plot things ------------------------------------------------------------------
+plt.close(3)
+plt.figure(3)
+plt.plot(xgv, np.angle(ZZ[:, Ny//2]), 'rx')
+plt.plot(xgv, np.angle(Ex[:, Ny//2]), 'k.')
+plt.legend(['Brendan FO', 'SRW FO'])
+plt.xlabel('Position [m]', fontsize=20)
+plt.ylabel('Phase [1]', fontsize=20)
+
+
+
+
+
+
+
+
+# # Extract the single particle intensity
+# arI1 = array('f', [0] * wfr1.mesh.nx * wfr1.mesh.ny)
+# srwl.CalcIntFromElecField(arI1, wfr1, 6, 0, 3, wfr1.mesh.eStart, 0, 0)
+# B = np.reshape(arI1, [Ny, Nx])
+#
+# P1 = np.abs(Ex[:, Ny//2])
+# P2 = EM[:, Ny//2, 0]
+# P3 = np.sqrt(B[:, Ny//2])
+#
+# plt.figure(2)
+# plt.plot(P1, "ro")
+# plt.plot(P2, 'bx')
+# plt.plot(P3, 'k')
+
+# plt.figure(1)
+# plt.subplot(121)
+# plt.imshow(np.abs(Ex))
+# plt.xlabel("x [mm]", fontsize=20)
+# plt.ylabel("y [mm]", fontsize=20)
+# plt.title("SRW Intensity", fontsize=20)
+#
+# plt.subplot(122)
+# plt.imshow(EM[:,:,0])
+# # plt.xlabel("x [mm]", fontsize=20)
+# plt.ylabel("y [mm]", fontsize=20)
+# plt.title("SRW Intensity", fontsize=20)
+# # plt.tight_layout()

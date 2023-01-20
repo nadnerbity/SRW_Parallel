@@ -16,7 +16,7 @@ def FO_TwoD_FFT(xgv, ygv, func_in):
 	delta_y = ygv[1]-ygv[0]
 	L = max(func_in.shape) # Make the fft symmetric around the largest dimension.
 	N = 2**nextpow2(L)
-	s = [N,N]
+	# s = [N,N]
 	Y = numpy.fft.fft2(func_in)
 	YY = numpy.fft.fftshift(Y)
 	x_max = 1.0/(2.0*delta_x)
@@ -52,7 +52,7 @@ def FO_TwoD_exact_SM(xgv,ygv,ZZ,distance,lambda_0):
 # z_start is the start point of the propagation.  It allows you to jump from the input laser position.
 # z_length is the length to propagate over.
 def FO_prop(xgv,ygv,ZZ,z_start,z_length,lambda_0,Nz):
-	print 'Propagating the beam', z_length, 'meters in', Nz, 'steps'
+	print('Propagating the beam', z_length, 'meters in', Nz, 'steps')
 	[Ny, Nx] = ZZ.shape
 	delta_z = z_length / Nz # Compute delta_z
 	prop_array = numpy.zeros((Nx,Nz)) # Allocate the array for the data
@@ -64,7 +64,7 @@ def FO_prop(xgv,ygv,ZZ,z_start,z_length,lambda_0,Nz):
 		FF_1 = FO_TwoD_exact_SM(xgv,ygv,FF_1,delta_z,lambda_0)
 		prop_array[:,i] = abs(FF_1[Ny/2-1,:])
 		if( i % 10 == 0):
-			print 'On propagation step', i, 'of', Nz
+			print('On propagation step', i, 'of', Nz)
 	return prop_array
 	
 # This function adds the phase due to an axilens.
@@ -81,25 +81,15 @@ def FO_axilens(XX,YY,ZZ,kappa_0,f0,Dz,R):
 	return ZZ
 	
 def FO_axicon(XX,YY,ZZ,kappa_0,phi,n):
-	axicon_phase = numpy.exp(-1j*kappa_0*numpy.sqrt(XX**2+YY**2)*(n-1)*numpy.tan(phi));
-	ZZ = axicon_phase*ZZ;
+	axicon_phase = numpy.exp(-1j*kappa_0*numpy.sqrt(XX**2+YY**2)*(n-1)*numpy.tan(phi))
+	ZZ = axicon_phase*ZZ
 	return ZZ
 
-# FO_interp is designed so that vorpal can make a request based on x,y,z,t instead
-# of using grid points.  It does this by generating a grid!
-# xgv and ygv are the grid spacings used to generate the output from the Fourier
-# program, which produces FF.
-# It returns an interpolation function that takes in (Y,Z) that will allow
-# vorpal to get the intensity distribution and the transverse coordinates (Y,Z).
-# (Y,Z) are NOT supplied to this function.
-# The function 
-def FO_interp(xgv,ygv,FF):
-	# Make sure the input is real.
-	if numpy.iscomplex(FF[1,1]): #If the [1,1] element is complex, the whole thing is.  And vice-versa.
-		FF = abs(FF)
-	interp_f = interp.interp2d(xgv,ygv,abs(FF))
-	return interp_f
-	
+
+def FO_lens(XX,YY,ZZ,kappa_0,f0):
+	lens_phase = numpy.exp((-1j*kappa_0/2/f0)*(XX**2+YY**2))
+	ZZ_1 = lens_phase * ZZ
+	return ZZ_1
 
 
 
