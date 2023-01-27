@@ -28,6 +28,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import time
 import FourierOptics as FO
+import tracemalloc
 # import h5py
 # Some matplotlib settings.
 plt.close('all')
@@ -100,9 +101,12 @@ plot_SRW_intensity(wfr1, fig_num=10)
 focal_length = 0.1
 prop_distance = 0.1  # in meters
 
+print('Nx is ' + str(Nx))
+print('Ny is ' + str(Ny))
 
 # Apply a lens phase using Brendan's FO ----------------------------------------
 # Build the physical spaces for the FO
+tracemalloc.start()
 t0 = time.time()
 xgv = np.linspace(wfr1.mesh.xStart, wfr1.mesh.xFin, wfr1.mesh.nx)
 ygv = np.linspace(wfr1.mesh.yStart, wfr1.mesh.yFin, wfr1.mesh.ny)
@@ -121,7 +125,14 @@ ZZ = FO.FO_TwoD_exact_SM(xgv, ygv, ZZ, prop_distance, photon_lam)
 time_str = "Brendan FO Run time: %.2f seconds." % (time.time() - t0)
 print(time_str)
 
+# displaying the memory
+print(tracemalloc.get_traced_memory())
+
+# stopping the library
+tracemalloc.stop()
+
 # Apply a lens phase using SRW -------------------------------------------------
+tracemalloc.start()
 t0 = time.time()
 
 wfr2 = deepcopy(wfr1)
@@ -140,6 +151,12 @@ Ex = EM[:,:,0] + 1j*EM[:,:,1] # The Ex part
 time_str = "SRW FO Run time: %.2f seconds." % (time.time() - t0)
 print(time_str)
 
+# displaying the memory
+print(tracemalloc.get_traced_memory())
+
+# stopping the library
+tracemalloc.stop()
+
 # Plot things ------------------------------------------------------------------
 plt.close(3)
 plt.figure(3)
@@ -150,7 +167,13 @@ plt.xlabel('Position [m]', fontsize=20)
 plt.ylabel('Phase [1]', fontsize=20)
 
 
-
+plt.close(4)
+plt.figure(4)
+plt.plot(xgv, np.abs(ZZ[:, Ny//2]), 'rx')
+plt.plot(xgv, np.abs(Ex[:, Ny//2]), 'k.')
+plt.legend(['Brendan FO', 'SRW FO'])
+plt.xlabel('Position [m]', fontsize=20)
+plt.ylabel('Phase [1]', fontsize=20)
 
 
 
