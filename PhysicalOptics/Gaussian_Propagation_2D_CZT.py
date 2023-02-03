@@ -121,14 +121,12 @@ ZZ = Ex[:, Ny//2]
 # FFT it
 xgv_out, ZZ1 = FO.FO_OneD_FFT(xgv, ZZ)
 
-x_freq, ZZ2 = FO.FO_OneD_CZT(xgv, ZZ, 2*Nx, -0.002, 0.001)
+x_freq, ZZ2 = FO.FO_OneD_CZT(xgv, ZZ, 2*Nx, -0.001, 0.001)
 
 time_str = "Brendan FO Run time: %.2f seconds." % (time.time() - t0)
 print(time_str)
 
-
-
-
+x_freq, BB = FO.FO_TwoD_CZT(xgv, Ex, 2*Nx, -0.001, 0.001)
 
 
 # Plot things ------------------------------------------------------------------
@@ -140,6 +138,15 @@ plt.plot(x_freq, np.abs(ZZ2), 'bo')
 plt.legend(['Brendan FFT', 'Brendan CZT'])
 plt.xlabel('Position [m]', fontsize=20)
 plt.ylabel('Phase [1]', fontsize=20)
+
+plt.close(5)
+plt.figure(5)
+plt.plot(np.abs(ZZ2), 'bo')
+plt.plot(np.abs(BB[:, Nx//2]), 'rx')
+plt.legend(['1D CZT', '2D CZT'])
+plt.xlabel('Position [m]', fontsize=20)
+plt.ylabel('Phase [1]', fontsize=20)
+
 
 
 

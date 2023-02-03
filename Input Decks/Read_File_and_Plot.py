@@ -37,7 +37,7 @@ plt.ion()
 if __name__ == '__main__':
 
     # Save the wavefront to a file.
-    filename = 'F2_BC11_B2_and_B3_Nx_4096'
+    filename = 'F2_BC11_B2_and_B3_Nx_2048'
     wfr = load_srw_wavefront(filename)
 
     # plot_SRW_intensity(wfr)

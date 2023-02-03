@@ -4,7 +4,7 @@ import math
 import numpy
 from scipy import pi as PI
 from scipy import interpolate as interp
-from scipy.signal import czt
+from scipy.signal import czt, CZT
 
 def nextpow2(L):
 	N = math.log(L)/math.log(2)
@@ -102,7 +102,7 @@ def FO_lens(XX,YY,ZZ,kappa_0,f0):
 	return ZZ_1
 
 
-def FO_OneD_CZT(xgv, ZZ, N_scale=1, x_start=None, x_stop=None):
+def FO_OneD_CZT(xgv, ZZ, M=None, x_start=None, x_stop=None):
 	'''
 	Use the Chirped Z-Transform to be able to scale the output space of a
 	Fourier transform so that you aren't dependent on the input grid spacing
@@ -111,36 +111,128 @@ def FO_OneD_CZT(xgv, ZZ, N_scale=1, x_start=None, x_stop=None):
 	:param xgv: Input vector that defines the physical space to perform the
 	CZT on
 	:param ZZ: The intensity of signal at each physical point of xgv
-	:param N_scale: Number to scale the density of point >1 means increase
-	density of points, >1.0 means decrease density
+	:param M: Number of points in the output of the CZT
 	:param x_start: starting x location to map the output to via the CZT
 	:param x_stop: ending x location to map the output to via CZT
 	:return:
 	'''
 
-	x_range = xgv[-1] - xgv[0]
+	if M is None:
+		M = xgv.size
 
 	if x_start is None:
-		x_start = -x_range/2
-		# x_start = -(xgv[-1] - xgv[0])/2
-		# I think this should be -(xgv[-1] + xgz[0])/2
+		x_start = xgv[0]
 
 	if x_stop is None:
-		x_stop = x_range/2
-		# x_stop = (xgv[-1] - xgv[0])/2
-		# I think this should be (xgv[-1] + xgz[0])/2
+		x_stop = xgv[-1]
 
-	L = max(ZZ.shape)
-	M = int(L * N_scale)
-	print("M is ", str(M))
+	x_range = xgv[-1] - xgv[0]
 
-	A = numpy.exp(1j*2*numpy.pi*(x_start+x_range/2)/x_range + 1j*2*numpy.pi/M)
-	W = numpy.exp(-1j*2*numpy.pi*(x_stop-x_start)/x_range/M)
+	A = numpy.exp(2j * numpy.pi * (x_start) / x_range)
+	W = numpy.exp(-2j * numpy.pi * (x_stop-x_start) / x_range / M)
 
+	temp = CZT(n = xgv.size, m = M, w = W, a = A)
+	y = temp(ZZ)
 	# y = czt(ZZ, M, W, A)
-	y = czt(ZZ, M)
-	y = numpy.fft.fftshift(y)
-	# x_freq = numpy.linspace(0, M, M) * (x_stop - x_start) / (M - 1) + x_start
-	x_freq = numpy.linspace(-M/2, M/2-1, M) / (xgv[1] - xgv[0]) / (M-1)
+
+	x_freq = numpy.linspace(0, M-1, M) / (M-1) / (xgv[1] - xgv[0]) \
+			* (x_stop - x_start) / x_range \
+			 + (x_start/x_range)/(xgv[1] - xgv[0]) * M / (M-1)
 	return x_freq, y
 
+def FO_TwoD_CZT(xgv, ZZ, M = None, x_start = None, x_stop = None):
+	"""
+	Perform the 2D CZT on a square input matrix. This function is used to
+	shrink the size of the output window of an FFT and/or change the density
+	of points in the output window.
+
+	:param xgv: Input vector that defines the physical space of the data
+	:param ZZ: 2D matrix (must be square) to CZT
+	:param M: New number of points in the output window.
+	:param x_start: Start of the output window frequency space
+	:param x_stop: End of the output window frequency space
+	:return: frequency space vector (analog of xgv), 2D transformed matrix
+	"""
+	if M is None:
+		M = xgv.size
+
+	if x_start is None:
+		x_start = xgv[0]
+
+	if x_stop is None:
+		x_stop = xgv[-1]
+
+	print('x_start is ', str(x_start))
+	print('x_stop is ', str(x_stop))
+	x_range = xgv[-1] - xgv[0]
+
+	A = numpy.exp(2j * numpy.pi * (x_start) / x_range)
+	W = numpy.exp(-2j * numpy.pi * (x_stop - x_start) / x_range / M)
+	temp = CZT(n=xgv.size, m=M, w=W, a=A)
+
+	BB = temp(ZZ, axis=0)
+	BB = temp(BB, axis=1)
+
+	x_freq = numpy.linspace(0, M-1, M) / (M-1) / (xgv[1] - xgv[0]) \
+			* (x_stop - x_start) / x_range \
+			 + (x_start/x_range)/(xgv[1] - xgv[0]) * M / (M-1)
+
+	return x_freq, BB
+
+def rearrange(x, xn, x0, fn, f0):
+	return (fn - f0) * (x - x0) / (xn - x0) + f0
+
+
+def FO_TwoD_exact_SM_CZT(X, ZZ, distance, lambda_0, M=None, x_out_1=None,
+						 x_out_2=None):
+	Nx = X.size
+
+	if M is None:
+		M = Nx
+
+	if x_out_1 is None:
+		x_out_1 = X[0]
+
+	if x_out_2 is None:
+		x_out_2 = X[-1]
+
+	# Perform the FFT to get into the Fourier Plane
+	x_range = X[-1] - X[0]
+	x_start = X[0]
+	x_stop = X[-1]
+
+	A = numpy.exp(2j * numpy.pi * (x_start) / x_range)
+	W = numpy.exp(-2j * numpy.pi * (x_stop - x_start) / x_range / Nx)
+	temp = CZT(n=X.size, m=Nx, w=W, a=A)
+	BB = temp(ZZ, axis=0) * (X[1] - X[0])
+	BB = temp(BB, axis=1) * (X[1] - X[0])
+	fx = numpy.linspace(-Nx / 2, Nx / 2, Nx) / (X[1] - X[0]) / Nx
+
+	# Now form a meshgrid to perform the diffraction calculation.
+	[XX,YY] = numpy.meshgrid(fx, fx)
+
+	# Perform the propagation diffraction calculation
+	kappa_0 = 2.0 * numpy.pi / lambda_0
+	TR_1 = numpy.exp(1j*kappa_0*distance*numpy.sqrt(1-(lambda_0*XX)**2-(
+			lambda_0*YY)**2))
+	TR_2 = (numpy.sqrt((lambda_0*XX)**2+(lambda_0*YY)**2) <= 1.0)
+	BB = BB*TR_1*TR_2
+
+	# iFFT back to real space, this is where the size change (if any) occurs
+	# IFFT the data
+	# M = 2 * Nx
+	x_range = X[-1] - X[0]
+	x_start = x_out_1
+	x_stop  = x_out_2
+
+	A = numpy.exp(2j * numpy.pi * (x_start - x_range / 2) / x_range +
+			   (1.0) * 1j * numpy.pi / Nx)  # This Nx is correct! Do not
+	# change it!
+	W = numpy.exp(-2j * numpy.pi * (x_stop - x_start) / x_range / (M - 1))
+	temp = CZT(n=Nx, m=M, w=W, a=A)
+	BB = temp(BB, axis=0)
+	BB = temp(BB, axis=1)
+	X2 = numpy.linspace(x_start, x_stop, M)
+
+
+	return X2, BB

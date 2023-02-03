@@ -45,7 +45,7 @@ sig_y           = sig_x
 
 # Define the parameters for the wavefront object that will hold the gaussian
 # beam
-Nx 			    = 2**6
+Nx 			    = 2**9
 Ny 			    = Nx
 zSrCalc 	    = 0.0 # Distance from sim start to calc SR. [m]
 xMiddle		    = 0.0*sig_x # middle of window in X to calc SR [m]
@@ -98,15 +98,15 @@ plot_SRW_intensity(wfr1, fig_num=10)
 
 
 # Simulation parameters
-focal_length = 0.1
-prop_distance = 0.1  # in meters
+focal_length = 5.0
+prop_distance = 5.0  # in meters
 
 print('Nx is ' + str(Nx))
 print('Ny is ' + str(Ny))
 
 # Apply a lens phase using Brendan's FO ----------------------------------------
 # Build the physical spaces for the FO
-# tracemalloc.start()
+
 t0 = time.time()
 xgv = np.linspace(wfr1.mesh.xStart, wfr1.mesh.xFin, wfr1.mesh.nx)
 ygv = np.linspace(wfr1.mesh.yStart, wfr1.mesh.yFin, wfr1.mesh.ny)
@@ -119,22 +119,21 @@ Ex = EM[:,:,0] + 1j*EM[:,:,1] # The Ex part
 
 # Apply the lens phase
 ZZ1 = FO.FO_lens(XX, YY, Ex, kappa_0, focal_length)
-# Propagate
+# Propagate using original SM method
 ZZ = FO.FO_TwoD_exact_SM(xgv, ygv, ZZ1, prop_distance, photon_lam)
-
-# ZZ2 = FO.FO_TwoD_exact_SM_CZT(xgv, ygv, ZZ1, prop_distance, photon_lam)
+# Propagate using new CZT method
+MM = 1*Nx
+x_freq, ZZ2 = FO.FO_TwoD_exact_SM_CZT(xgv, ZZ1, 1.0*prop_distance, photon_lam,
+                                      M = MM,
+                                      x_out_1 = xgv[0],
+                                      x_out_2 = xgv[-1])
 
 time_str = "Brendan FO Run time: %.2f seconds." % (time.time() - t0)
 print(time_str)
 
-# displaying the memory
-# print(tracemalloc.get_traced_memory())
-
-# stopping the library
-# tracemalloc.stop()
 
 # Apply a lens phase using SRW -------------------------------------------------
-# tracemalloc.start()
+
 t0 = time.time()
 
 wfr2 = deepcopy(wfr1)
@@ -148,64 +147,43 @@ srwl.PropagElecField(wfr2, a_drift)
 
 EM = convert_srw_linear_fields_to_matrix_fields(wfr2)
 # Convert the real + complex parts into complex fields
-Ex = EM[:,:,0] + 1j*EM[:,:,1] # The Ex part
+Exx = EM[:,:,0] + 1j*EM[:,:,1] # The Ex part
 
 time_str = "SRW FO Run time: %.2f seconds." % (time.time() - t0)
 print(time_str)
 
-# displaying the memory
-# print(tracemalloc.get_traced_memory())
-
-# stopping the library
-# tracemalloc.stop()
-
 # Plot things ------------------------------------------------------------------
-plt.close(3)
-plt.figure(3)
-plt.plot(xgv, np.angle(ZZ[:, Ny//2]), 'rx')
-plt.plot(xgv, np.angle(Ex[:, Ny//2]), 'k.')
-plt.legend(['Brendan FO', 'SRW FO'])
-plt.xlabel('Position [m]', fontsize=20)
-plt.ylabel('Phase [1]', fontsize=20)
 
+
+to_plot = np.abs(ZZ2[:, MM//2]) \
+          * max(np.abs(ZZ[:, Ny//2])) / max(np.abs(ZZ2[MM//2, :]))
 
 plt.close(4)
 plt.figure(4)
 plt.plot(xgv, np.abs(ZZ[:, Ny//2]), 'rx')
-plt.plot(xgv, np.abs(Ex[:, Ny//2]), 'k.')
-plt.legend(['Brendan FO', 'SRW FO'])
+plt.plot(xgv, np.abs(Exx[:, Ny//2]), 'k.')
+plt.scatter(x_freq, to_plot, s=40,
+         facecolors='none', edgecolors='b')
+plt.legend(['Brendan FO', 'SRW FO', 'Brendan CZT'])
 plt.xlabel('Position [m]', fontsize=20)
-plt.ylabel('Phase [1]', fontsize=20)
+plt.ylabel('Amplitude [arb]', fontsize=20)
+# plt.xlim([-0.0004, 0.0004])
+# plt.ylim([1.38e8, 1.48e8])
 
 
 
+# plt.close(5)
+# plt.figure(5)
+# plt.plot(np.abs(ZZ[:, Ny//2]), 'rx')
+# plt.plot(np.abs(Exx[:, Ny//2]), 'k.')
+# plt.plot(to_plot, 'bo')
+# plt.legend(['Brendan FO', 'SRW FO', 'Brendan CZT'])
+# plt.xlabel('Position [m]', fontsize=20)
+# plt.ylabel('Amplitude [arb]', fontsize=20)
+# plt.xlim([250, 261])
+# plt.ylim([1.38e8, 1.48e8])
 
+# plt.close(45)
+# plt.figure(45)
+# plt.plot(np.abs(Ex[:, Ny//2]), 'rx')
 
-
-# # Extract the single particle intensity
-# arI1 = array('f', [0] * wfr1.mesh.nx * wfr1.mesh.ny)
-# srwl.CalcIntFromElecField(arI1, wfr1, 6, 0, 3, wfr1.mesh.eStart, 0, 0)
-# B = np.reshape(arI1, [Ny, Nx])
-#
-# P1 = np.abs(Ex[:, Ny//2])
-# P2 = EM[:, Ny//2, 0]
-# P3 = np.sqrt(B[:, Ny//2])
-#
-# plt.figure(2)
-# plt.plot(P1, "ro")
-# plt.plot(P2, 'bx')
-# plt.plot(P3, 'k')
-
-# plt.figure(1)
-# plt.subplot(121)
-# plt.imshow(np.abs(Ex))
-# plt.xlabel("x [mm]", fontsize=20)
-# plt.ylabel("y [mm]", fontsize=20)
-# plt.title("SRW Intensity", fontsize=20)
-#
-# plt.subplot(122)
-# plt.imshow(EM[:,:,0])
-# # plt.xlabel("x [mm]", fontsize=20)
-# plt.ylabel("y [mm]", fontsize=20)
-# plt.title("SRW Intensity", fontsize=20)
-# # plt.tight_layout()
