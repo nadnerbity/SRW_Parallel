@@ -80,7 +80,8 @@ def F2_BC11_B2_and_B3(_Nx):
     Ny 			    = Nx
     B3_phys_edge    = entry_drift + 1.6*3*L_edge + L_Bend + Bend_sep # The
     # physical edge of B3 (i.e. where the field has just become flat.)
-    zSrCalc 	    = B3_phys_edge + 0.8209 # Distance from sim start to calc SR. [m]
+    zSrCalc 	    = B3_phys_edge + 0.8209  + 1.0# Distance from sim start to
+    # calc SR. [m]
     xMiddle		    = 0.0 # middle of window in X to calc SR [m]
     xWidth 		    = 0.08*1.0 # width of x window. [m]
     yMiddle 	    = 0.00 # middle of window in Y to calc SR [m]
@@ -203,7 +204,7 @@ def F2_BC11_B2_and_B3(_Nx):
 
 if __name__ == '__main__':
 
-    nx = 2**11
+    nx = 2**9
     # Prepare the simulation
     wfr, magFldCnt, arPrecPar = F2_BC11_B2_and_B3(nx)
 
@@ -213,7 +214,8 @@ if __name__ == '__main__':
     # Perform the simulation but using N processors.
     wfr2 = CalcElecFieldGaussianMPI(wfr, magFldCnt, arPrecPar)
 
+
     # Save the wavefront to a file.
-    filename = 'F2_BC11_B2_and_B3_Nx_' + str(nx)
+    filename = 'F2_BC11_B2_and_B3_Small_Nx_' + str(nx)
     dump_srw_wavefront(filename, wfr2)
 

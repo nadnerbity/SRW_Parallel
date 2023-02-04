@@ -206,7 +206,8 @@ def FO_TwoD_exact_SM_CZT(X, ZZ, distance, lambda_0, M=None, x_out_1=None,
 	temp = CZT(n=X.size, m=Nx, w=W, a=A)
 	BB = temp(ZZ, axis=0) * (X[1] - X[0])
 	BB = temp(BB, axis=1) * (X[1] - X[0])
-	fx = numpy.linspace(-Nx / 2, Nx / 2, Nx) / (X[1] - X[0]) / Nx
+	# fx = numpy.linspace(-Nx / 2, Nx / 2, Nx) / (X[1] - X[0]) / Nx
+	fx = numpy.linspace(-Nx / 2, Nx / 2 - 1, Nx) / (X[1] - X[0]) / Nx
 
 	# Now form a meshgrid to perform the diffraction calculation.
 	[XX,YY] = numpy.meshgrid(fx, fx)

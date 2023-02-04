@@ -45,7 +45,7 @@ sig_y           = sig_x
 
 # Define the parameters for the wavefront object that will hold the gaussian
 # beam
-Nx 			    = 2**9
+Nx 			    = 2**11
 Ny 			    = Nx
 zSrCalc 	    = 0.0 # Distance from sim start to calc SR. [m]
 xMiddle		    = 0.0*sig_x # middle of window in X to calc SR [m]
@@ -98,8 +98,8 @@ plot_SRW_intensity(wfr1, fig_num=10)
 
 
 # Simulation parameters
-focal_length = 5.0
-prop_distance = 5.0  # in meters
+focal_length = 0.25
+prop_distance = 0.25  # in meters
 
 print('Nx is ' + str(Nx))
 print('Ny is ' + str(Ny))
@@ -122,7 +122,7 @@ ZZ1 = FO.FO_lens(XX, YY, Ex, kappa_0, focal_length)
 # Propagate using original SM method
 ZZ = FO.FO_TwoD_exact_SM(xgv, ygv, ZZ1, prop_distance, photon_lam)
 # Propagate using new CZT method
-MM = 1*Nx
+MM = 2*Nx
 x_freq, ZZ2 = FO.FO_TwoD_exact_SM_CZT(xgv, ZZ1, 1.0*prop_distance, photon_lam,
                                       M = MM,
                                       x_out_1 = xgv[0],
@@ -154,23 +154,23 @@ print(time_str)
 
 # Plot things ------------------------------------------------------------------
 
-
-to_plot = np.abs(ZZ2[:, MM//2]) \
-          * max(np.abs(ZZ[:, Ny//2])) / max(np.abs(ZZ2[MM//2, :]))
+to_plot_1 = np.abs(ZZ[:, Ny//2]) / np.max(np.abs(ZZ[:, Ny//2]))
+to_plot_2 = np.abs(Exx[:, Ny//2]) / np.max(np.abs(Exx[:, Ny//2]))
+to_plot_3 = np.abs(ZZ2[:, MM//2]) / np.max(np.abs(ZZ2[MM//2, :]))
 
 plt.close(4)
 plt.figure(4)
-plt.plot(xgv, np.abs(ZZ[:, Ny//2]), 'rx')
-plt.plot(xgv, np.abs(Exx[:, Ny//2]), 'k.')
-plt.scatter(x_freq, to_plot, s=40,
+plt.plot(xgv, to_plot_1, 'rx')
+plt.plot(xgv, to_plot_2, 'k.')
+plt.scatter(x_freq, to_plot_3, s=40,
          facecolors='none', edgecolors='b')
 plt.legend(['Brendan FO', 'SRW FO', 'Brendan CZT'])
 plt.xlabel('Position [m]', fontsize=20)
 plt.ylabel('Amplitude [arb]', fontsize=20)
 # plt.xlim([-0.0004, 0.0004])
-# plt.ylim([1.38e8, 1.48e8])
+# plt.ylim([0.9, 1.05])
 
-
+plot_SRW_intensity(wfr2, fig_num=11)
 
 # plt.close(5)
 # plt.figure(5)

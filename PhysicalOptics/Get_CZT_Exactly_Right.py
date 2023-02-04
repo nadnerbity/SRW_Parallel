@@ -41,7 +41,7 @@ def Gaussian(x, mu, sig):
     return np.exp(-(x-mu)**2/2/sig**2)
 
 
-Nx = 2**7
+Nx = 2**8
 xMin = -10
 xMax = 10
 X = np.linspace(xMin, xMax, Nx)
@@ -58,7 +58,9 @@ A = np.exp(2j * np.pi * (x_start) / x_range)
 W = np.exp(-2j * np.pi * (x_stop - x_start) / x_range / Nx)
 temp = CZT(n = X.size, m = Nx, w = W, a = A)
 y = temp(Y) * (X[1] - X[0])
-x = np.linspace(-Nx/2, Nx/2, Nx) / (X[1] - X[0]) / Nx
+x = np.linspace(-Nx/2, Nx/2-1, Nx) / (X[1] - X[0]) / (Nx)
+
+x2, y2 = FO.FO_OneD_FFT(X, Y)
 
 # IFFT the data
 M = 2*Nx
@@ -81,6 +83,17 @@ plt.legend(['After FFT+iFFT', 'Input'])
 # plt.xlim([-1.0, 1.0])
 # plt.ylim([0.9, 1.05])
 
+# to_plot_1 = abs(y) / max(abs(y))
+# to_plot_2 = abs(y2) / max(abs(y2))
+#
+# plt.close(3)
+# plt.figure(3)
+# plt.plot(x, to_plot_1, 'bo')
+# plt.plot(x2, to_plot_2, 'rx')
+# plt.legend(['CZT FFT', 'Numpy FFT'])
+# plt.xlim([-0.2, 0.2])
+# plt.ylim([0.75, 1.05])
+
 # plt.close(2)
 # plt.figure(2)
 # plt.plot(abs(y), 'bo')
@@ -89,7 +102,7 @@ plt.legend(['After FFT+iFFT', 'Input'])
 
 
 # ------------------------------------------------------------------------------
-# This works when M != Nx || M == Nx, and adjustabel x_start and x_stop on
+# This works when M != Nx || M == Nx, and adjustable x_start and x_stop on
 # the final output window.
 
 # # CZT in 1D

@@ -59,7 +59,7 @@ W = np.exp(-2j * np.pi * (x_stop - x_start) / x_range / Nx)
 temp = CZT(n = X.size, m = Nx, w = W, a = A)
 BB = temp(ZZ, axis=0) * (X[1] - X[0])
 BB = temp(BB, axis=1) * (X[1] - X[0])
-x = np.linspace(-Nx/2, Nx/2, Nx) / (X[1] - X[0]) / Nx
+x = np.linspace(-Nx/2, Nx/2-1, Nx) / (X[1] - X[0]) / Nx
 
 # IFFT the data
 M = 2*Nx
@@ -87,9 +87,9 @@ plt.legend(['After FFT+iFFT','Input'])
 # plt.xlim([-1.0, 1.0])
 # plt.ylim([0.9, 1.05])
 
-plt.close(2)
-plt.figure(2)
-plt.imshow(abs(BB))
+# plt.close(2)
+# plt.figure(2)
+# plt.imshow(abs(BB))
 
 # Compare to the function you wrote based on the above testing.
 # X3, CC = FO.FO_TwoD_exact_SM_CZT(X, ZZ, 0.0, 0.0, M, -7.0, 2.5)

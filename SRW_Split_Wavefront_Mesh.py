@@ -72,6 +72,8 @@ def CalcElecFieldGaussianMPI(wfr_main, magFldCnt, arPrecPar):
     # Run the simulation
     srwl.CalcElecFieldSR(wfr_sub, 0, magFldCnt, arPrecPar)
     print('Time for each MPI Simulation', time.time() - start)
+    # print('Rx and Ry are ', wfr_sub.Rx, wfr_sub.Ry)
+    # print('dRx and dRy are ', wfr_sub.dRx, wfr_sub.dRy)
 
     # Hold here until all processors are done.
     comm.Barrier()
