@@ -46,7 +46,7 @@ def F2_BC11_B2_and_B3(_Nx):
     """
 
     # Beam Parameters.
-    beam_energy 	= 0.330 # Beam energy in GeV
+    beam_energy 	= 0.120 # Beam energy in GeV
     x_initial_1 	= 0.0 # Initial x offset in meters
     xp_initial_1 	= 0.0 # initial xprime in rad
     z_initial_1 	= 0.0 # In meters
@@ -54,21 +54,16 @@ def F2_BC11_B2_and_B3(_Nx):
     # Magnet parameters
     goal_Bend_Angle = 0.105*180/np.pi # In degrees, should be about 6 degrees for
     #  BC11
-    B0 			    = 0.6 # Magnetic field strength in Tesla.
+    B0 			    = 0.566604 # Magnetic field strength in Tesla.
     L_Bend 		    = 0.204 # Length of the dipoles in meters.
     L_edge 		    = 0.05 # length of the field edge in meters.
     entry_drift     = 0.3 # Entry and exit drifts, in meters
-    Bend_sep        = 0.83 - 1.6*2*L_edge # Distance between the magnet edges if
-    # they had zero length edges. Subtract off L_edge because the
-    # measurements/Lucretia files dont' include edges in distance. The 1.6 is a
-    # fudge factor for in simulation length vs the defined length. The
-    # distribution in the documentation appears to be wrong, so I can't
-    # analytically reproduce this.
+
 
     # Beam transport simulation parameters.
     npTraj 			= 2**14 # Number of points to compute the trajectory. 2**14
     ctStart 		= 0.0 # start point for tracking simulation, in meters
-    ctEnd 			= 2.0*L_Bend + 4.0*L_edge + 2.0*entry_drift + Bend_sep
+    ctEnd 			= 1.0*L_Bend + 2.0*L_edge + 2.0*entry_drift
     # end point for tracking simulation, in meters
 
     photon_lam 	    = 0.65e-6 # Photon wavelength in [m]
@@ -78,20 +73,21 @@ def F2_BC11_B2_and_B3(_Nx):
     # Wavefront mesh parameters
     Nx 			    = _Nx
     Ny 			    = Nx
-    B3_phys_edge    = entry_drift + 1.6*3*L_edge + L_Bend + Bend_sep # The
-    # physical edge of B3 (i.e. where the field has just become flat.)
-    zSrCalc 	    = B3_phys_edge + 0.8209 # Distance from sim start to
+    B1_phys_edge    = entry_drift + 1.6*1*L_edge# The
+    # physical upstream edge of B1 (i.e. where the field has just become flat.)
+    zSrCalc 	    = B1_phys_edge + 0.204 + 0.60 + 0.289 # Distance from sim
+    # start to
     # calc SR. [m]
     xMiddle		    = 0.0 # middle of window in X to calc SR [m]
-    xWidth 		    = 0.08*1.0 # width of x window. [m]
-    yMiddle 	    = 0.00 # middle of window in Y to calc SR [m]
+    xWidth 		    = 0.040*2.0 # width of x window. [m]
+    yMiddle 	    = 0.0 # middle of window in Y to calc SR [m]
     yWidth 		    = xWidth # width of y window. [m]
 
     # SR integration flags.
     use_termin 		= 1 #1 #Use "terminating terms" (i.e. asymptotic expansions
     # at  zStartInteg and zEndInteg) or not (1 or 0 respectively)
     # Precision for SR integration
-    srPrec 		    = 0.05 #0.01
+    srPrec 		    = 0.05 #0.05
 
     ################################################################################
     ################### DERIVED SIMULATION PARAMETERS ##############################
@@ -125,8 +121,9 @@ def F2_BC11_B2_and_B3(_Nx):
 
 
     #**********************Build the magnetic field container
-    # magFldCnt = build_single_magnet(B0, L_Bend, L_edge, entry_drift)
-    magFldCnt = build_two_magnets(B0, L_Bend, L_edge, entry_drift, Bend_sep)
+    magFldCnt = build_single_magnet(B0, L_Bend, L_edge, entry_drift)
+    # magFldCnt = build_two_magnets(B0, L_Bend, L_edge, entry_drift, Bend_sep)
+
 
     ################################################################################
     ########################## OPTIMIZE THE SIMULATION #############################
@@ -138,16 +135,16 @@ def F2_BC11_B2_and_B3(_Nx):
     print('done.')
 
     # Set the field strength to get the desired bend angle
-    partTraj_1, magFldCnt = set_mag_strength_by_bend_angle(goal_Bend_Angle, B0,
-                                               partTraj_1, magFldCnt,
-                                               L_Bend, L_edge, entry_drift,
-                                                Bend_sep, trajPrecPar)
+    # partTraj_1, magFldCnt = set_mag_strength_by_bend_angle(goal_Bend_Angle, B0,
+    #                                            partTraj_1, magFldCnt,
+    #                                            L_Bend, L_edge, entry_drift,
+    #                                             Bend_sep, trajPrecPar)
 
     # Set the initial particle offset and angle to make the offset and angle
     #  zero. You want to use the first edge, but it has a lot of background from
     # 'creation' of the particle.
     partTraj_1 = set_initial_offset_and_angle(partTraj_1, magFldCnt,
-                                              trajPrecPar)
+                                              trajPrecPar, -1)
 
 
     ################################################################################
@@ -199,23 +196,136 @@ def F2_BC11_B2_and_B3(_Nx):
     wfr1.partBeam 		= elecBeam_1
 
 
-    return wfr1, magFldCnt, arPrecPar
+    return wfr1, magFldCnt, arPrecPar, partTraj_1, elecBeam_1
 
 
 if __name__ == '__main__':
 
     nx = 2**10
+
     # Prepare the simulation
-    wfr, magFldCnt, arPrecPar = F2_BC11_B2_and_B3(nx)
+    wfr, magFldCnt, arPrecPar, partTraj_1, elecBeam_1 = F2_BC11_B2_and_B3(nx)
 
-    # copy the resulting wavefront for safe keeping
+    # Perform the simulation.
+    t0 = time.time()
+    time_str = 'SR Calculation started at ' + time.ctime() + \
+               '. \n'
+    print(time_str, end='')
+
+    # # copy the resulting wavefront for safe keeping
     wfr1 = deepcopy(wfr)
+    srwl.CalcElecFieldSR(wfr1, 0, magFldCnt, arPrecPar)
 
-    # Perform the simulation but using N processors.
-    wfr2 = CalcElecFieldGaussianMPI(wfr, magFldCnt, arPrecPar)
-
-
+    # wfr1 = CalcElecFieldGaussianMPI(wfr, magFldCnt, arPrecPar)
     # Save the wavefront to a file.
-    filename = 'F2_BC11_B2_and_B3_Nx_' + str(nx)
-    dump_srw_wavefront(filename, wfr2)
+    filename = 'F2_DL_B1_' + str(nx)
+    dump_srw_wavefront(filename, wfr1)
+
+    time_str = "Run time: %.2f seconds." % (time.time() - t0)
+    print(time_str)
+
+    # --------------------------------------------------------------------------
+    # --------------------------------------------------------------------------
+
+    filename = 'F2_DL_B1_' + str(nx)
+    wfr1 = load_srw_wavefront(filename)
+
+    t0 = time.time()
+    time_str = 'SRW Physical Optics Calculation started at ' + time.ctime() + \
+               '. \n'
+    print(time_str, end='')
+
+    wfr_out = deepcopy(wfr1)
+    p_dist          = 1.0*0.912
+    focal_length    = 1.0*0.105 # in meters
+    prop_distance   = 1.0*0.1121 # in meters
+
+
+    paramsAper  = [0, 0, 1., 0, 0, 1., 1., 1., 1., 0, 0, 0]
+    paramsLens  = [0, 0, 1., 0, 0, 1., 1., 1., 1., 0, 0, 0]
+    paramsDrift = [0, 0, 1., 1, 0, 1., 1., 1., 1., 0, 0, 0]
+
+    a_drift = SRWLOptC(
+        [SRWLOptA(_shape = 'c', _ap_or_ob = 'a', _Dx = 0.2),
+         SRWLOptL(focal_length, focal_length),
+         SRWLOptD(prop_distance)],
+        [paramsAper, paramsLens, paramsDrift])
+    srwl.PropagElecField(wfr_out, a_drift)
+
+    # a_drift = SRWLOptC(
+    #     [SRWLOptA(_shape = 'c', _ap_or_ob = 'a', _Dx = 0.038),
+    #      SRWLOptD(p_dist),
+    #      SRWLOptL(focal_length, focal_length),
+    #      SRWLOptD(prop_distance)],
+    #     [paramsAper, paramsDrift, paramsLens, paramsDrift])
+    # srwl.PropagElecField(wfr_out, a_drift)
+
+    time_str = "Run time: %.2f seconds." % (time.time() - t0)
+    print(time_str)
+
+    # plot_SRW_intensity(wfr1, 1)
+    plot_SRW_intensity(wfr_out, 1)
+
+    plot_two_SRW_intensity(wfr1, wfr_out, "Input WF", "Prop. WF", 3)
+
+    aWfr = wfr_out
+    II = convert_Efield_to_intensity(aWfr)
+    to_plot = II[:, 1*nx // 4]
+    y = np.linspace(aWfr.mesh.yStart, aWfr.mesh.yFin, aWfr.mesh.ny)
+    y_fwhm = 2.0*y[np.abs(to_plot - to_plot.max()/2.0).argmin()]
+
+    plt.close(13)
+    plt.figure(13)
+    plt.plot(y, to_plot)
+    plt.xlabel('y [mm]', fontsize=20)
+    plt.ylabel('Intensity [arb]', fontsize=20)
+    plt.tight_layout()
+
+    ##########################################
+    # Convolve the single particle wavefront with a beam.
+
+    beam_energy_temp = elecBeam_1.partStatMom1.get_E()
+    gamma = elecBeam_1.partStatMom1.get_E() / 0.511e-3
+
+    elecBeam_1.from_Twiss(_Iavg=0.5, _e=beam_energy_temp, _sig_e=0.0,
+                          _emit_x=(5e-6 / gamma),
+                          _beta_x=1.0,
+                          _alpha_x=(5e-6 / gamma) * 1.0,
+                          _eta_x=0,
+                          _eta_x_pr=0,
+                          _emit_y=(5e-6 / gamma),
+                          _beta_y=1.0,
+                          _alpha_y=(5e-6 / gamma) * 1.0,
+                          _eta_y=0,
+                          _eta_y_pr=0)
+
+
+
+    convWfr = deepcopy(wfr_out)
+    xMin = 1e3 * convWfr.mesh.xStart
+    xMax = 1e3 * convWfr.mesh.xFin
+    yMin = 1e3 * convWfr.mesh.yStart
+    yMax = 1e3 * convWfr.mesh.yFin
+
+    convWfr.partBeam = elecBeam_1
+    arI2_temp = array('f', [0] * convWfr.mesh.nx * convWfr.mesh.ny)
+    srwl.CalcIntFromElecField(arI2_temp, convWfr, 6, 1, 3,
+                              convWfr.mesh.eStart, 0, 0)
+    C_conv = np.reshape(arI2_temp, [convWfr.mesh.nx, convWfr.mesh.ny])
+
+    plt.close(14)
+    plt.figure(14)
+    plt.imshow(C_conv, extent=[xMin, xMax, yMin, yMax])
+    plt.gca().set_aspect((xMax - xMin) / (yMax - yMin))
+    plt.xlabel("x [mm]", fontsize=20)
+    plt.ylabel("y [mm]", fontsize=20)
+    plt.clim([0, np.max(C_conv)])
+    plt.title("SRW Intensity", fontsize=20)
+    plt.set_cmap('jet')
+    plt.tight_layout()
+
+
+    to_plot = C_conv[:, 1*nx // 4]
+    y = np.linspace(convWfr.mesh.yStart, convWfr.mesh.yFin, convWfr.mesh.ny)
+    y_fwhm2 = 2.0*y[np.abs(to_plot - to_plot.max()/2.0).argmin()]
 

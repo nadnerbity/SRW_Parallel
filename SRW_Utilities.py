@@ -161,7 +161,7 @@ def set_mag_strength_by_bend_angle(goal_Bend_Angle, B0, partTraj_1,
     return partTraj_1, magFldCnt
 
 
-def set_simulation_length(partTraj_1, magFldCnt):
+def set_simulation_length(partTraj_1, magFldCnt, Np = 2):
 
     """
     # To make the length of simulation symmetric in magnets with large bend
@@ -182,7 +182,7 @@ def set_simulation_length(partTraj_1, magFldCnt):
 
     for k in range(N):
         # z_diff = ctEndGoal - partTraj_1.arZ[-1]
-        z_diff = ctEndGoal - partTraj_1.arZ[partTraj_1.np//2]
+        z_diff = ctEndGoal - partTraj_1.arZ[partTraj_1.np//Np]
         partTraj_1.ctEnd = partTraj_1.ctEnd + z_diff
         partTraj_1 = srwl.CalcPartTraj(partTraj_1, magFldCnt, trajPrecPar)
 
@@ -191,7 +191,7 @@ def set_simulation_length(partTraj_1, magFldCnt):
     return partTraj_1
 
 
-def set_initial_offset_and_angle(partTraj_1, magFldCnt, trajPrecPar):
+def set_initial_offset_and_angle(partTraj_1, magFldCnt, trajPrecPar, Np = None):
     """
     # I setup all simulations so that the wavefront plane is on axis. This
     means that when I change the magnetic field strength I need to make sure
@@ -204,9 +204,12 @@ def set_initial_offset_and_angle(partTraj_1, magFldCnt, trajPrecPar):
     :param trajPrecPar: Precision to simulation the trajectory
     :return: partTraj_1 with no offset and angle in the middle of the two bends
     """
+    if Np is None:
+        Np = partTraj_1.np//2
+
     print('   Setting the initial offset and angle ... ')
-    partTraj_1.partInitCond.x = partTraj_1.arX[partTraj_1.np//2]
-    partTraj_1.partInitCond.xp = -partTraj_1.arXp[partTraj_1.np//2]
+    partTraj_1.partInitCond.x = partTraj_1.arX[Np]
+    partTraj_1.partInitCond.xp = -partTraj_1.arXp[Np]
 
     # Run the updated particle trajectory
     partTraj_1 = srwl.CalcPartTraj(partTraj_1, magFldCnt, trajPrecPar)
@@ -214,18 +217,19 @@ def set_initial_offset_and_angle(partTraj_1, magFldCnt, trajPrecPar):
     # Do it again to get the offset very small. Again, this should only need to
     # be done once but there are precision parameters I don't fully understand.
 
-    partTraj_1.partInitCond.x = partTraj_1.partInitCond.x - partTraj_1.arX[partTraj_1.np//2]
+    partTraj_1.partInitCond.x = partTraj_1.partInitCond.x - partTraj_1.arX[Np]
     partTraj_1.partInitCond.xp = partTraj_1.partInitCond.xp - \
-        partTraj_1.arXp[partTraj_1.np//2]
+        partTraj_1.arXp[Np]
 
     # Run the updated particle trajectory
     partTraj_1 = srwl.CalcPartTraj(partTraj_1, magFldCnt, trajPrecPar)
 
     print("Angle at entrance " + str(partTraj_1.arXp[0] * 180 / pi) + \
                                                                     " degrees")
-    print("Angle in middle " + str(partTraj_1.arXp[partTraj_1.np//2] * 180 / pi) + \
+    print("Angle in middle " + str(partTraj_1.arXp[Np] * 180 /
+                                   pi) + \
                                                                     " degrees")
-    print("Offset in middle " + str(partTraj_1.arX[partTraj_1.np//2] * 1000.0)
+    print("Offset in middle " + str(partTraj_1.arX[Np] * 1000.0)
           + \
           " [mm]")
 
