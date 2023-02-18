@@ -37,7 +37,7 @@ t0 = time.time()
 
 
 ########################## SETUP THE SIM ###########
-def F2_BC11_B2_and_B3(_Nx):
+def F2_DL_B1(_Nx):
     """
     # Setup the simulation for the B2 and B3 magnets in BC11. This is a
     simulation for testing purposes. SRW documentation will help decypher
@@ -202,9 +202,10 @@ def F2_BC11_B2_and_B3(_Nx):
 if __name__ == '__main__':
 
     nx = 2**10
+    filename = 'F2_DL_B1_' + str(nx)
 
     # Prepare the simulation
-    wfr, magFldCnt, arPrecPar, partTraj_1, elecBeam_1 = F2_BC11_B2_and_B3(nx)
+    wfr, magFldCnt, arPrecPar, partTraj_1, elecBeam_1 = F2_DL_B1(nx)
 
     # Perform the simulation.
     t0 = time.time()
@@ -218,7 +219,7 @@ if __name__ == '__main__':
 
     # wfr1 = CalcElecFieldGaussianMPI(wfr, magFldCnt, arPrecPar)
     # Save the wavefront to a file.
-    filename = 'F2_DL_B1_' + str(nx)
+
     dump_srw_wavefront(filename, wfr1)
 
     time_str = "Run time: %.2f seconds." % (time.time() - t0)
@@ -227,7 +228,7 @@ if __name__ == '__main__':
     # --------------------------------------------------------------------------
     # --------------------------------------------------------------------------
 
-    filename = 'F2_DL_B1_' + str(nx)
+
     wfr1 = load_srw_wavefront(filename)
 
     t0 = time.time()
@@ -237,8 +238,8 @@ if __name__ == '__main__':
 
     wfr_out = deepcopy(wfr1)
     p_dist          = 1.0*0.912
-    focal_length    = 1.0*0.105 # in meters
-    prop_distance   = 1.0*0.1121 # in meters
+    focal_length    = 1.0*0.085 # in meters
+    prop_distance   = 1.0*0.0952 # in meters
 
 
     paramsAper  = [0, 0, 1., 0, 0, 1., 1., 1., 1., 0, 0, 0]
@@ -252,14 +253,6 @@ if __name__ == '__main__':
         [paramsAper, paramsLens, paramsDrift])
     srwl.PropagElecField(wfr_out, a_drift)
 
-    # a_drift = SRWLOptC(
-    #     [SRWLOptA(_shape = 'c', _ap_or_ob = 'a', _Dx = 0.038),
-    #      SRWLOptD(p_dist),
-    #      SRWLOptL(focal_length, focal_length),
-    #      SRWLOptD(prop_distance)],
-    #     [paramsAper, paramsDrift, paramsLens, paramsDrift])
-    # srwl.PropagElecField(wfr_out, a_drift)
-
     time_str = "Run time: %.2f seconds." % (time.time() - t0)
     print(time_str)
 
@@ -270,7 +263,7 @@ if __name__ == '__main__':
 
     aWfr = wfr_out
     II = convert_Efield_to_intensity(aWfr)
-    to_plot = II[:, 1*nx // 4]
+    to_plot = II[:, 3*nx // 4]
     y = np.linspace(aWfr.mesh.yStart, aWfr.mesh.yFin, aWfr.mesh.ny)
     y_fwhm = 2.0*y[np.abs(to_plot - to_plot.max()/2.0).argmin()]
 
@@ -325,7 +318,7 @@ if __name__ == '__main__':
     plt.tight_layout()
 
 
-    to_plot = C_conv[:, 1*nx // 4]
+    to_plot = C_conv[:, 3*nx // 4]
     y = np.linspace(convWfr.mesh.yStart, convWfr.mesh.yFin, convWfr.mesh.ny)
     y_fwhm2 = 2.0*y[np.abs(to_plot - to_plot.max()/2.0).argmin()]
 

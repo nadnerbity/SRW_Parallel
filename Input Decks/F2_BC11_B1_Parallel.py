@@ -37,7 +37,7 @@ t0 = time.time()
 
 
 ########################## SETUP THE SIM ###########
-def F2_BC11_B2_and_B3(_Nx):
+def F2_BC11_B1(_Nx):
     """
     # Setup the simulation for the B2 and B3 magnets in BC11. This is a
     simulation for testing purposes. SRW documentation will help decypher
@@ -75,10 +75,11 @@ def F2_BC11_B2_and_B3(_Nx):
     Ny 			    = Nx
     B1_phys_edge    = entry_drift + 1.6*1*L_edge# The
     # physical upstream edge of B1 (i.e. where the field has just become flat.)
-    zSrCalc 	    = B1_phys_edge + 1.09 # Distance from sim start to
+    zSrCalc 	    = B1_phys_edge + 0.204 + 0.60 + 0.289 # Distance from sim
+    # start to
     # calc SR. [m]
     xMiddle		    = 0.0 # middle of window in X to calc SR [m]
-    xWidth 		    = 0.040*1.0 # width of x window. [m]
+    xWidth 		    = 0.040*2.0 # width of x window. [m]
     yMiddle 	    = 0.0 # middle of window in Y to calc SR [m]
     yWidth 		    = xWidth # width of y window. [m]
 
@@ -86,7 +87,7 @@ def F2_BC11_B2_and_B3(_Nx):
     use_termin 		= 1 #1 #Use "terminating terms" (i.e. asymptotic expansions
     # at  zStartInteg and zEndInteg) or not (1 or 0 respectively)
     # Precision for SR integration
-    srPrec 		    = 0.05 #0.01
+    srPrec 		    = 0.05 #0.05
 
     ################################################################################
     ################### DERIVED SIMULATION PARAMETERS ##############################
@@ -195,15 +196,16 @@ def F2_BC11_B2_and_B3(_Nx):
     wfr1.partBeam 		= elecBeam_1
 
 
-    return wfr1, magFldCnt, arPrecPar, partTraj_1
+    return wfr1, magFldCnt, arPrecPar, partTraj_1, elecBeam_1
 
 
 if __name__ == '__main__':
 
     nx = 2**10
+    filename = 'F2_BC11_B1_' + str(nx)
 
     # Prepare the simulation
-    wfr, magFldCnt, arPrecPar, partTraj_1 = F2_BC11_B2_and_B3(nx)
+    wfr, magFldCnt, arPrecPar, partTraj_1, elecBeam_1 = F2_BC11_B1(nx)
 
     # Perform the simulation.
     t0 = time.time()
@@ -211,13 +213,13 @@ if __name__ == '__main__':
                '. \n'
     print(time_str, end='')
 
-    # copy the resulting wavefront for safe keeping
+    # # copy the resulting wavefront for safe keeping
     wfr1 = deepcopy(wfr)
     srwl.CalcElecFieldSR(wfr1, 0, magFldCnt, arPrecPar)
 
     # wfr1 = CalcElecFieldGaussianMPI(wfr, magFldCnt, arPrecPar)
     # Save the wavefront to a file.
-    filename = 'F2_BC11_B1_' + str(nx)
+
     dump_srw_wavefront(filename, wfr1)
 
     time_str = "Run time: %.2f seconds." % (time.time() - t0)
@@ -226,7 +228,7 @@ if __name__ == '__main__':
     # --------------------------------------------------------------------------
     # --------------------------------------------------------------------------
 
-    filename = 'F2_BC11_B1_' + str(nx)
+
     wfr1 = load_srw_wavefront(filename)
 
     t0 = time.time()
@@ -235,16 +237,17 @@ if __name__ == '__main__':
     print(time_str, end='')
 
     wfr_out = deepcopy(wfr1)
-    focal_length = 1.0*0.105 # in meters
-    prop_distance = 1.0*0.117 # in meters
-    reres = 1.0
+    p_dist          = 1.0*0.912
+    focal_length    = 1.0*0.050 # in meters
+    prop_distance   = 1.0*0.0575 # in meters
+
 
     paramsAper  = [0, 0, 1., 0, 0, 1., 1., 1., 1., 0, 0, 0]
     paramsLens  = [0, 0, 1., 0, 0, 1., 1., 1., 1., 0, 0, 0]
-    paramsDrift = [0, 0, 1., 0, 0, 1., 1., 1., 1., 0, 0, 0]
+    paramsDrift = [0, 0, 1., 1, 0, 1., 1., 1., 1., 0, 0, 0]
 
     a_drift = SRWLOptC(
-        [SRWLOptA(_shape = 'c', _ap_or_ob = 'a', _Dx = 0.038),
+        [SRWLOptA(_shape = 'c', _ap_or_ob = 'a', _Dx = 0.2),
          SRWLOptL(focal_length, focal_length),
          SRWLOptD(prop_distance)],
         [paramsAper, paramsLens, paramsDrift])
@@ -258,6 +261,64 @@ if __name__ == '__main__':
 
     plot_two_SRW_intensity(wfr1, wfr_out, "Input WF", "Prop. WF", 3)
 
+    aWfr = wfr_out
+    II = convert_Efield_to_intensity(aWfr)
+    to_plot = II[:, 3*nx // 4]
+    y = np.linspace(aWfr.mesh.yStart, aWfr.mesh.yFin, aWfr.mesh.ny)
+    y_fwhm = 2.0*y[np.abs(to_plot - to_plot.max()/2.0).argmin()]
+
+    plt.close(13)
+    plt.figure(13)
+    plt.plot(y, to_plot)
+    plt.xlabel('y [mm]', fontsize=20)
+    plt.ylabel('Intensity [arb]', fontsize=20)
+    plt.tight_layout()
+
+    ##########################################
+    # Convolve the single particle wavefront with a beam.
+
+    beam_energy_temp = elecBeam_1.partStatMom1.get_E()
+    gamma = elecBeam_1.partStatMom1.get_E() / 0.511e-3
+
+    elecBeam_1.from_Twiss(_Iavg=0.5, _e=beam_energy_temp, _sig_e=0.0,
+                          _emit_x=(5e-6 / gamma),
+                          _beta_x=1.0,
+                          _alpha_x=(5e-6 / gamma) * 1.0,
+                          _eta_x=0,
+                          _eta_x_pr=0,
+                          _emit_y=(5e-6 / gamma),
+                          _beta_y=1.0,
+                          _alpha_y=(5e-6 / gamma) * 1.0,
+                          _eta_y=0,
+                          _eta_y_pr=0)
 
 
+
+    convWfr = deepcopy(wfr_out)
+    xMin = 1e3 * convWfr.mesh.xStart
+    xMax = 1e3 * convWfr.mesh.xFin
+    yMin = 1e3 * convWfr.mesh.yStart
+    yMax = 1e3 * convWfr.mesh.yFin
+
+    convWfr.partBeam = elecBeam_1
+    arI2_temp = array('f', [0] * convWfr.mesh.nx * convWfr.mesh.ny)
+    srwl.CalcIntFromElecField(arI2_temp, convWfr, 6, 1, 3,
+                              convWfr.mesh.eStart, 0, 0)
+    C_conv = np.reshape(arI2_temp, [convWfr.mesh.nx, convWfr.mesh.ny])
+
+    plt.close(14)
+    plt.figure(14)
+    plt.imshow(C_conv, extent=[xMin, xMax, yMin, yMax])
+    plt.gca().set_aspect((xMax - xMin) / (yMax - yMin))
+    plt.xlabel("x [mm]", fontsize=20)
+    plt.ylabel("y [mm]", fontsize=20)
+    plt.clim([0, np.max(C_conv)])
+    plt.title("Beam Convolved SRW Intensity", fontsize=20)
+    plt.set_cmap('jet')
+    plt.tight_layout()
+
+
+    to_plot = C_conv[:, 3*nx // 4]
+    y = np.linspace(convWfr.mesh.yStart, convWfr.mesh.yFin, convWfr.mesh.ny)
+    y_fwhm2 = 2.0*y[np.abs(to_plot - to_plot.max()/2.0).argmin()]
 
