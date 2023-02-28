@@ -9,12 +9,13 @@
 
 from __future__ import print_function #Python 2.7 compatibility
 import sys
+import os
 #sys.path.insert(0, '/Users/brendan/Documents/FACET/SRW/SRW-light/env/work/srw_python') # To find the SRW python libraries.
 sys.path.insert(0, '/scratch/brendan/SRW/SRW/env/work/srw_python') # To find
 # the SRW python libraries.
-sys.path.insert(0, '/scratch/brendan/SRW_Parallel/SRW_Parallel')
-
-
+file_dir = os.path.dirname(os.path.realpath(__file__))
+file_dir = '/'.join(file_dir.split('/')[:-1])
+sys.path.insert(0, file_dir)
 
 # set the backend for matplot lib
 import matplotlib
@@ -24,7 +25,7 @@ import matplotlib
 from srwlib import *
 from SRW_Split_Wavefront_Mesh import *
 from SRW_Utilities import *
-import os
+
 import matplotlib.pyplot as plt
 import numpy as np
 import time
