@@ -13,6 +13,7 @@ import os
 #sys.path.insert(0, '/Users/brendan/Documents/FACET/SRW/SRW-light/env/work/srw_python') # To find the SRW python libraries.
 sys.path.insert(0, '/scratch/brendan/SRW/SRW/env/work/srw_python') # To find
 # the SRW python libraries.
+# Add the path to the SRW_Parallel library (one directory up)
 file_dir = os.path.dirname(os.path.realpath(__file__))
 file_dir = '/'.join(file_dir.split('/')[:-1])
 sys.path.insert(0, file_dir)

@@ -3,16 +3,23 @@
 
 #############################################################################
 # This file is simulating the second and third bend magnets in the FACET BC11
-# chicane.
+# chicane. This is the first file that runs the SRW simulation that
+# calculates the field pattern on the lens used in experiments. It does not
+# do physical optics propagation to the camera chip.
 
 
 
-from __future__ import print_function #Python 2.7 compatibility
+# from __future__ import print_function #Python 2.7 compatibility
+import os
 import sys
 #sys.path.insert(0, '/Users/brendan/Documents/FACET/SRW/SRW-light/env/work/srw_python') # To find the SRW python libraries.
-sys.path.insert(0, '/scratch/brendan/SRW/SRW/env/work/srw_python') # To find
+# sys.path.insert(0, '/scratch/brendan/SRW/SRW/env/work/srw_python') # To find
 # the SRW python libraries.
-sys.path.insert(0, '/scratch/brendan/SRW_Parallel/SRW_Parallel')
+
+# Add the path to the SRW_Parallel library (one directory up)
+file_dir = os.path.dirname(os.path.realpath(__file__))
+file_dir = '/'.join(file_dir.split('/')[:-1])
+sys.path.insert(0, file_dir)
 
 
 
@@ -58,7 +65,7 @@ def F2_BC11_B2_and_B3(_Nx):
     L_Bend 		    = 0.204 # Length of the dipoles in meters.
     L_edge 		    = 0.05 # length of the field edge in meters.
     entry_drift     = 0.3 # Entry and exit drifts, in meters
-    Bend_sep        = 0.83 - 1.6*2*L_edge # Distance between the magnet edges if
+    Bend_sep        = 0.93 - 1.6*2*L_edge # Distance between the magnet edges if
     # they had zero length edges. Subtract off L_edge because the
     # measurements/Lucretia files dont' include edges in distance. The 1.6 is a
     # fudge factor for in simulation length vs the defined length. The
@@ -80,7 +87,7 @@ def F2_BC11_B2_and_B3(_Nx):
     Ny 			    = Nx
     B3_phys_edge    = entry_drift + 1.6*3*L_edge + L_Bend + Bend_sep # The
     # physical edge of B3 (i.e. where the field has just become flat.)
-    zSrCalc 	    = B3_phys_edge + 0.8209 # Distance from sim start to
+    zSrCalc 	    = B3_phys_edge + 1.045 # Distance from sim start to
     # calc SR. [m]
     xMiddle		    = 0.0 # middle of window in X to calc SR [m]
     xWidth 		    = 0.08*1.0 # width of x window. [m]
@@ -204,18 +211,33 @@ def F2_BC11_B2_and_B3(_Nx):
 
 if __name__ == '__main__':
 
-    nx = 2**10
+    nx = 2**11
     # Prepare the simulation
     wfr, magFldCnt, arPrecPar = F2_BC11_B2_and_B3(nx)
 
-    # copy the resulting wavefront for safe keeping
+    # THe MPI way.
+    # # copy the resulting wavefront for safe keeping
+    # wfr1 = deepcopy(wfr)
+    #
+    # # Perform the simulation but using N processors.
+    # wfr2 = CalcElecFieldGaussianMPI(wfr, magFldCnt, arPrecPar)
+    # # Save the wavefront to a file.
+    # filename = 'F2_BC11_B2_and_B3_Nx_' + str(nx)
+    # dump_srw_wavefront(filename, wfr2)
+
+    # The original SRW way -----------------------------------------------------
+    # Perform the simulation.
+    t0 = time.time()
+    time_str = 'SR Calculation started at ' + time.ctime() + \
+               '. \n'
+    print(time_str, end='')
+    # # copy the resulting wavefront for safe keeping
     wfr1 = deepcopy(wfr)
+    srwl.CalcElecFieldSR(wfr1, 0, magFldCnt, arPrecPar)
+    time_str = "Run time: %.2f seconds." % (time.time() - t0)
+    print(time_str)
 
-    # Perform the simulation but using N processors.
-    wfr2 = CalcElecFieldGaussianMPI(wfr, magFldCnt, arPrecPar)
-
-
-    # Save the wavefront to a file.
     filename = 'F2_BC11_B2_and_B3_Nx_' + str(nx)
-    dump_srw_wavefront(filename, wfr2)
+    # Save the wavefront to a file.
+    dump_srw_wavefront(filename, wfr1)
 

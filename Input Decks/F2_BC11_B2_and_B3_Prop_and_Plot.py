@@ -3,7 +3,8 @@
 
 #############################################################################
 # This file is simulating the second and third bend magnets in the FACET BC11
-# chicane.
+# chicane. This is the second half of the calculation that propagates the
+# fields through an aperture a lens and then the to the CCD chip.
 
 
 
@@ -45,8 +46,6 @@ if __name__ == '__main__':
     # Load the wavefront to a file.
     filename = 'F2_BC11_B2_and_B3_Nx_1024'
     wfr = load_srw_wavefront(filename)
-    wfr.Rx = 1.05*wfr.Rx
-    wfr.Ry = 1.05*wfr.Ry
 
     # plot_SRW_intensity(wfr)
 
@@ -62,7 +61,7 @@ if __name__ == '__main__':
     # Robbie working
     paramsAper  = [0, 0, 1., 0, 0, 1., 1., 1., 1., 0, 0, 0]
     paramsLens  = [0, 0, 1., 0, 0, 1., 1., 1., 1., 0, 0, 0]
-    paramsDrift = [0, 0, 1., 1, 0, 1., 1., 1., 1., 0, 0, 0]
+    paramsDrift = [0, 0, 1., 0, 0, 1., 1., 1., 1., 0, 0, 0]
 
     a_drift = SRWLOptC(
         [SRWLOptA(_shape = 'c', _ap_or_ob = 'a', _Dx = 0.075),
