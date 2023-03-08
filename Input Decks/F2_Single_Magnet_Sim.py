@@ -13,6 +13,9 @@
 # 4) Use the particle trajectory to calculate fields and deposit them on the
 # wavefront object from (3)
 
+# This file is for building and testing, so it will have a bunch of stuff you
+#  may not need in the future.
+
 
 import sys
 import os
@@ -78,7 +81,7 @@ class F2_Single_Magnet_Sim:
 
     # Wavefront mesh grid parameters -------------------------------------------
     # Photon wavelength in [m]
-    photon_lam = 0.65e-6
+    # photon_lam = 0.65e-6
 
     # Wavefront parameters
     B3_phys_edge    = entry_drift + 1.6*3*L_edge + L_bend + Bend_sep # The
@@ -96,7 +99,7 @@ class F2_Single_Magnet_Sim:
     # Precision for SR integration
     srPrec 		    = 0.05 #0.01
 
-    def __init__(self, Nx=2**10, goal_Bend_Angle = 6.0, meshZ=2.0):
+    def __init__(self, Nx=2**10, goal_Bend_Angle = 6.0, meshZ=2.0, ph_lam=0.65e-6):
         """
 
         :param Nx: Number of grid cells in X and Y for the wavefront
@@ -112,6 +115,9 @@ class F2_Single_Magnet_Sim:
         # Set the desired bend angle.
         self.goal_Bend_Angle = goal_Bend_Angle
 
+        # Set the wavelength
+        self.photon_lam = ph_lam
+
         # Set the Z location of the mesh with respect to the first magnet edge
         self.zSrCalc = meshZ + self.entry_drift + 1.6 * self.L_edge
 
@@ -125,7 +131,6 @@ class F2_Single_Magnet_Sim:
 
         # Setup the wavefront
         self.wfr = self.build_wavefront_mesh()
-
 
     def build_single_magnet(self):
         """
@@ -314,7 +319,7 @@ class F2_Single_Magnet_Sim:
         time_str = "Run time: %.2f seconds. \n" % (time.time() - t0)
         print(time_str)
 
-    def propagate_wavefront_through_optics(self, fLength, pLength):
+    def propagate_wavefront_through_optics(self, fLength=0.105, pLength=0.105):
         """
         Propagate the wavefront through an aperture, lens and some finite
         distance
@@ -362,10 +367,11 @@ class F2_Single_Magnet_Sim:
             [paramsDrift])
         srwl.PropagElecField(self.wfr, a_drift)
 
-    def propagate_wavefront_through_window(self):
+    def propagate_wavefront_through_window(self, windowToLens=0.215):
         """
         Propagate the wavefront through an aperture, lens and some finite
         distance
+        :param windowToLens: The distance from the window to the lens, in meters
         :return:  N/A
         """
 
@@ -389,7 +395,7 @@ class F2_Single_Magnet_Sim:
 
         a_drift = SRWLOptC(
             [SRWLOptA(_shape='c', _ap_or_ob='a', _Dx=0.038),
-             SRWLOptD(0.215),
+             SRWLOptD(windowToLens),
              SRWLOptA(_shape='c', _ap_or_ob='a', _Dx=0.075),
              SRWLOptL(focal_length, focal_length),
              SRWLOptD(prop_distance)],
@@ -399,56 +405,120 @@ class F2_Single_Magnet_Sim:
         time_str = "Run time: %.2f seconds. \n" % (time.time() - t0)
         print(time_str)
 
+    def __str__(self):
+        print("Simulation Mesh Parameters")
+        print('Input Nx = Ny = ', self.wfr.mesh.nx, self.wfr.mesh.ny)
+        print('Input xWdith ', self.wfr.mesh.xFin - self.wfr.mesh.xStart, ' [m]')
+        print('Input yWdith ', self.wfr.mesh.yFin - self.wfr.mesh.yStart, ' [m]')
+        return "\n"
+
+    def lineout_in_y(self, nx):
+        """
+        This function does a lineout along the y-axis for a fixed nx point.
+        It returns the lineout and an appropriate vector for the physical
+        pixel locations
+        :param nx: x pixel to perform the y-lineout in.
+        :return y: vector of pixel locations
+        :return yLineout: lineout in Y at x pixel nx
+        """
+
+        I = convert_Efield_to_intensity(self.wfr)
+        yLineout = I[:, nx]
+        y = np.linspace(self.wfr.mesh.yStart,
+                        self.wfr.mesh.yFin,
+                        self.wfr.mesh.ny)
+        return y, yLineout
+
+    def resize_wavefront(self, newX=4.850e-3, newY=3.615e-3):
+        """
+        * Change the physical size of the wavefront mesh.
+        * Does not change the number of grid points. This is accomplished by
+        the 1/Scale in the srwl call below.
+        * Result is 'in place' and stored in self.wfr
+        * Defaults are the sizes of an Allied Vision Mako G125B camera.
+        :param newX: Desired horizontal size of the mesh, in meters
+        :return:
+        """
+        xScale = newX / (self.wfr.mesh.xFin - self.wfr.mesh.xStart)
+        yScale = newY / (self.wfr.mesh.yFin - self.wfr.mesh.yStart)
+        srwl.ResizeElecField(self.wfr, 'c', [0,
+                                             xScale,
+                                             1./xScale,
+                                             yScale,
+                                             1./yScale,
+                                             0.5,
+                                             0.5])
+
 if __name__ == '__main__':
 
     # Create the simulation
     B2B3_first_edge_to_camera = 1.795 # in meters
     B2B3_second_edge_to_camera = 1.795 - 0.75  # in meters
+    B2B3_first_edge_to_window = 1.795 - 0.215 # in meters
+    B2B3_second_edge_to_window = 1.795 - 0.215 - 0.75  # in meters
 
     # Run the simulation for the first edge.
-    B2B3_first_edge = F2_Single_Magnet_Sim(Nx=2**9,
+    B2B3_first_edge = F2_Single_Magnet_Sim(Nx=2**10,
                                   goal_Bend_Angle=-.105 * 180 / np.pi,
-                                  meshZ=B2B3_first_edge_to_camera)
+                                  meshZ=B2B3_first_edge_to_window,
+                                  ph_lam=0.65e-6)
     # Run the SRW calculation
     B2B3_first_edge.run_SR_calculation()
 
 
     # Run the simulation for the second edge.
-    B2B3_second_edge = F2_Single_Magnet_Sim(Nx=2**9,
+    B2B3_second_edge = F2_Single_Magnet_Sim(Nx=2**10,
                                   goal_Bend_Angle=.105 * 180 / np.pi,
-                                  meshZ=B2B3_second_edge_to_camera)
+                                  meshZ=B2B3_second_edge_to_window,
+                                  ph_lam=0.65e-6)
     # Run the SRW calculation
     B2B3_second_edge.run_SR_calculation()
 
-    # B2B3_first_edge.propagate_wavefront_through_optics(fLength=0.105,
-    #                                                    pLength=0.095)
-    # B2B3_second_edge.propagate_wavefront_through_optics(fLength=0.105,
-    #                                                     pLength=0.095)
+    B2B3_first_edge.propagate_wavefront_through_window()
+    B2B3_second_edge.propagate_wavefront_through_window()
 
-    # ------------------------------------
-
-    # B2B3_first_edge_to_window = 1.58  # in meters
-    # B2B3_second_edge_to_window = 1.58 - 0.75  # in meters
-    #
-    # # Run the simulation for the first edge.
-    # B2B3_first_edge = F2_Single_Magnet_Sim(Nx=2**9,
-    #                               goal_Bend_Angle=-.105 * 180 / np.pi,
-    #                               meshZ=B2B3_first_edge_to_window)
-    # # Run the SRW calculation
-    # B2B3_first_edge.run_SR_calculation()
-    #
-    # # Run the simulation for the second edge.
-    # B2B3_second_edge = F2_Single_Magnet_Sim(Nx=2**9,
-    #                               goal_Bend_Angle=.105 * 180 / np.pi,
-    #                               meshZ=B2B3_second_edge_to_window)
-    # # Run the SRW calculation
-    # B2B3_second_edge.run_SR_calculation()
-    #
-    # B2B3_first_edge.propagate_wavefront_through_window()
-    # B2B3_second_edge.propagate_wavefront_through_window()
+    # Resize the wavefronts after propagation
+    B2B3_first_edge.resize_wavefront()
+    B2B3_second_edge.resize_wavefront()
 
     # Combine the two wavefronts
-    wfr = deepcopy(B2B3_first_edge.wfr)
-    wfr.addE(B2B3_second_edge.wfr)
-    plot_SRW_intensity(wfr)
+    wfr = deepcopy(B2B3_second_edge.wfr)
+    wfr.addE(B2B3_first_edge.wfr)
+    plot_SRW_intensity(wfr, title="650 nm, after lens")
+
+    #
+    # B2B3_first_edge.__str__()
+    # xScale = 4.850e-3 / (B2B3_first_edge.wfr.mesh.xFin -
+    #                       B2B3_first_edge.wfr.mesh.xStart)
+    # srwl.ResizeElecField(B2B3_first_edge.wfr, 'c', [0,
+    #                                      xScale,
+    #                                      1/xScale,
+    #                                      1.,
+    #                                      1.,
+    #                                      0.5,
+    #                                      0.5])
+    # B2B3_first_edge.__str__()
+
+
+    # plot_SRW_intensity(B2B3_first_edge.wfr, fig_num = 124,
+    #                    title='B2B3 First Edge')
+    # print('First Edge Parameters:')
+    # B2B3_first_edge.__str__()
+    #
+    # plot_SRW_intensity(B2B3_second_edge.wfr, fig_num = 125,
+    #                    title='B2B3 Second Edge')
+    # print('Second Edge Parameters:')
+    # B2B3_second_edge.__str__()
+
+    # B2B3_first_y, B2B3_first_yLineout = B2B3_first_edge.lineout_in_y(128)
+    # B2B3_second_y, B2B3_second_yLineout = B2B3_second_edge.lineout_in_y(3*128)
+    # plt.close(12351)
+    # plt.figure(12351, facecolor='w')
+    # plt.plot(B2B3_first_y*1e3, B2B3_first_yLineout, 'bo')
+    # plt.plot(B2B3_second_y*1e3, B2B3_second_yLineout, 'rx')
+    # plt.xlabel('Y [mm]', fontsize=18)
+    # plt.ylabel('Intensity [arb]', fontsize=18)
+    # plt.legend(['B2B3 First Edge', 'B2B3 Second Edge'])
+
+
 

@@ -357,7 +357,7 @@ def convert_matrix_fields_to_srw_linear_fields(II, wfr1):
     return wfr1
 
 
-def plot_SRW_intensity(wfr1, fig_num=2):
+def plot_SRW_intensity(wfr1, fig_num=2, title="SRW Intensity"):
     Nx = wfr1.mesh.nx
     Ny = wfr1.mesh.ny
     xMin = 1e3 * wfr1.mesh.xStart
@@ -379,7 +379,7 @@ def plot_SRW_intensity(wfr1, fig_num=2):
     plt.xlabel("x [mm]", fontsize=20)
     plt.ylabel("y [mm]", fontsize=20)
     plt.clim([0, np.max(B)])
-    plt.title("SRW Intensity", fontsize=20)
+    plt.title(title, fontsize=20)
     plt.set_cmap('jet')
     plt.tight_layout()
 
