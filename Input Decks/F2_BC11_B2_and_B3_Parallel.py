@@ -211,33 +211,33 @@ def F2_BC11_B2_and_B3(_Nx):
 
 if __name__ == '__main__':
 
-    nx = 2**11
+    nx = 2**14
     # Prepare the simulation
     wfr, magFldCnt, arPrecPar = F2_BC11_B2_and_B3(nx)
 
-    # THe MPI way.
-    # # copy the resulting wavefront for safe keeping
-    # wfr1 = deepcopy(wfr)
-    #
-    # # Perform the simulation but using N processors.
-    # wfr2 = CalcElecFieldGaussianMPI(wfr, magFldCnt, arPrecPar)
-    # # Save the wavefront to a file.
-    # filename = 'F2_BC11_B2_and_B3_Nx_' + str(nx)
-    # dump_srw_wavefront(filename, wfr2)
+    # The MPI way.
+    # copy the resulting wavefront for safe keeping
+    wfr1 = deepcopy(wfr)
+
+    # Perform the simulation but using N processors.
+    wfr2 = CalcElecFieldGaussianMPI(wfr, magFldCnt, arPrecPar)
+    # Save the wavefront to a file.
+    filename = 'F2_BC11_B2_and_B3_Nx_' + str(nx)
+    dump_srw_wavefront(filename, wfr2)
 
     # The original SRW way -----------------------------------------------------
     # Perform the simulation.
-    t0 = time.time()
-    time_str = 'SR Calculation started at ' + time.ctime() + \
-               '. \n'
-    print(time_str, end='')
-    # # copy the resulting wavefront for safe keeping
-    wfr1 = deepcopy(wfr)
-    srwl.CalcElecFieldSR(wfr1, 0, magFldCnt, arPrecPar)
-    time_str = "Run time: %.2f seconds." % (time.time() - t0)
-    print(time_str)
-
-    filename = 'F2_BC11_B2_and_B3_Nx_' + str(nx)
-    # Save the wavefront to a file.
-    dump_srw_wavefront(filename, wfr1)
+    # t0 = time.time()
+    # time_str = 'SR Calculation started at ' + time.ctime() + \
+    #            '. \n'
+    # print(time_str, end='')
+    # # # copy the resulting wavefront for safe keeping
+    # wfr1 = deepcopy(wfr)
+    # srwl.CalcElecFieldSR(wfr1, 0, magFldCnt, arPrecPar)
+    # time_str = "Run time: %.2f seconds." % (time.time() - t0)
+    # print(time_str)
+    #
+    # filename = 'F2_BC11_B2_and_B3_Nx_' + str(nx)
+    # # Save the wavefront to a file.
+    # dump_srw_wavefront(filename, wfr1)
 

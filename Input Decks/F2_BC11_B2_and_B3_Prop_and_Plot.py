@@ -61,7 +61,7 @@ if __name__ == '__main__':
     # Robbie working
     paramsAper  = [0, 0, 1., 0, 0, 1., 1., 1., 1., 0, 0, 0]
     paramsLens  = [0, 0, 1., 0, 0, 1., 1., 1., 1., 0, 0, 0]
-    paramsDrift = [0, 0, 1., 0, 0, 1., 1., 1., 1., 0, 0, 0]
+    paramsDrift = [0, 0, 1., 1, 0, 1., 1., 1., 1., 0, 0, 0]
 
     a_drift = SRWLOptC(
         [SRWLOptA(_shape = 'c', _ap_or_ob = 'a', _Dx = 0.075),

@@ -45,8 +45,8 @@ if __name__ == '__main__':
     # Load the wavefront to a file.
     filename = 'F2_BC11_B2_and_B3_Nx_1024'
     wfr = load_srw_wavefront(filename)
-    wfr.Rx = 1.05*wfr.Rx
-    wfr.Ry = 1.05*wfr.Ry
+    # wfr.Rx = 1.05*wfr.Rx
+    # wfr.Ry = 1.05*wfr.Ry
 
     # plot_SRW_intensity(wfr)
 
@@ -58,7 +58,6 @@ if __name__ == '__main__':
     wfr_out = deepcopy(wfr)
     focal_length = 1.0*0.105 # in meters
     prop_distance = 1.0*0.105 # in meters
-    reres = 1.0
     # Robbie working
     paramsAper  = [0, 0, 1., 0, 0, 1., 1., 1., 1., 0, 0, 0]
     paramsLens  = [0, 0, 1., 0, 0, 1., 1., 1., 1., 0, 0, 0]

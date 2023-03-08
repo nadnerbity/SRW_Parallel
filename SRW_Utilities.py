@@ -115,9 +115,9 @@ def set_mag_strength_by_bend_angle(goal_Bend_Angle, B0, partTraj_1,
                                    magFldCnt, L_Bend, L_edge, entry_drift,
                                    Bend_sep, trajPrecPar):
     """
-    # When the entrance and exit edge fields change length, the total bend angle
-    # will change. This function sets the field strength such that the bend angle
-    #  is the user input value.
+    When the entrance and exit edge fields change length, the total bend angle
+    will change. This function sets the field strength such that the bend angle
+     is the user input value.
 
     # This function is written for pairs of bend magnets and sets the angle and
     # offset to zero in the middle of the two magnets.
