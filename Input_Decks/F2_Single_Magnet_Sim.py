@@ -80,9 +80,6 @@ class F2_Single_Magnet_Sim:
 
 
     # Wavefront mesh grid parameters -------------------------------------------
-    # Photon wavelength in [m]
-    # photon_lam = 0.65e-6
-
     # Wavefront parameters
     B3_phys_edge    = entry_drift + 1.6*3*L_edge + L_bend + Bend_sep # The
     # physical edge of B3 (i.e. where the field has just become flat.)
@@ -130,7 +127,7 @@ class F2_Single_Magnet_Sim:
         self.set_simulation_length()
 
         # Setup the wavefront
-        self.wfr = self.build_wavefront_mesh()
+        # self.wfr = self.build_wavefront_mesh()
 
     def build_single_magnet(self):
         """
@@ -252,42 +249,81 @@ class F2_Single_Magnet_Sim:
         self.partTraj  = self.build_particle_trajectory()
         self.set_simulation_length()
 
-    def build_wavefront_mesh(self):
-        """
-        Build a wavefront mesh to hold the generated radiation data. Written
-        for single wavelength
+    # def build_wavefront_mesh(self):
+    #     """
+    #     Build a wavefront mesh to hold the generated radiation data. Written
+    #     for single wavelength
+    #
+    #     :return:
+    #     """
+    #     # convert wavelength to eV
+    #     photon_e = 4.135e-15 * 299792458.0 / self.photon_lam
+    #
+    #     # Set up an electron beam faking a single particle
+    #     # This is what is used to generate the SR.
+    #     elecBeam = SRWLPartBeam()
+    #     elecBeam.Iavg = 0.5  # Average Current [A]
+    #     elecBeam.partStatMom1.x       = self.partTraj.partInitCond.x
+    #     elecBeam.partStatMom1.y       = self.partTraj.partInitCond.y
+    #     elecBeam.partStatMom1.z       = self.partTraj.partInitCond.z
+    #     elecBeam.partStatMom1.xp      = self.partTraj.partInitCond.xp
+    #     elecBeam.partStatMom1.yp      = self.partTraj.partInitCond.yp
+    #     elecBeam.partStatMom1.gamma   = self.beam_energy / 0.51099890221e-03
+    #
+    #     # *********** Wavefront data placeholder
+    #     wfr1 = SRWLWfr()  # For spectrum vs photon energy
+    #     # Numbers of points vs Photon Energy, Horizontal and Vertical Positions
+    #     wfr1.allocate(1, self.Nx, self.Ny)
+    #     wfr1.mesh.zStart    = self.zSrCalc  # Longitudinal Position [m] from
+    #     # Center of Straight Section at which SR has to be calculated
+    #     wfr1.mesh.eStart    = photon_e  # Initial Photon Energy [eV]
+    #     wfr1.mesh.eFin      = photon_e  # Final Photon Energy [eV]
+    #     wfr1.mesh.xStart    = self.xMiddle - self.xWidth / 2.0  # Initial Horizontal Position [m]
+    #     wfr1.mesh.xFin      = self.xMiddle + self.xWidth / 2.0  # Final Horizontal Position [m]
+    #     wfr1.mesh.yStart    = self.yMiddle - self.yWidth / 2.0  # Initial Vertical Position [m]
+    #     wfr1.mesh.yFin      = self.yMiddle + self.yWidth / 2.0  # Final Vertical Position [m]
+    #     wfr1.partBeam       = elecBeam
+    #
+    #     return wfr1
 
-        :return:
-        """
-        # convert wavelength to eV
-        photon_e = 4.135e-15 * 299792458.0 / self.photon_lam
-
-        # Set up an electron beam faking a single particle
-        # This is what is used to generate the SR.
-        elecBeam = SRWLPartBeam()
-        elecBeam.Iavg = 0.5  # Average Current [A]
-        elecBeam.partStatMom1.x       = self.partTraj.partInitCond.x
-        elecBeam.partStatMom1.y       = self.partTraj.partInitCond.y
-        elecBeam.partStatMom1.z       = self.partTraj.partInitCond.z
-        elecBeam.partStatMom1.xp      = self.partTraj.partInitCond.xp
-        elecBeam.partStatMom1.yp      = self.partTraj.partInitCond.yp
-        elecBeam.partStatMom1.gamma   = self.beam_energy / 0.51099890221e-03
-
-        # *********** Wavefront data placeholder
-        wfr1 = SRWLWfr()  # For spectrum vs photon energy
-        # Numbers of points vs Photon Energy, Horizontal and Vertical Positions
-        wfr1.allocate(1, self.Nx, self.Ny)
-        wfr1.mesh.zStart    = self.zSrCalc  # Longitudinal Position [m] from
-        # Center of Straight Section at which SR has to be calculated
-        wfr1.mesh.eStart    = photon_e  # Initial Photon Energy [eV]
-        wfr1.mesh.eFin      = photon_e  # Final Photon Energy [eV]
-        wfr1.mesh.xStart    = self.xMiddle - self.xWidth / 2.0  # Initial Horizontal Position [m]
-        wfr1.mesh.xFin      = self.xMiddle + self.xWidth / 2.0  # Final Horizontal Position [m]
-        wfr1.mesh.yStart    = self.yMiddle - self.yWidth / 2.0  # Initial Vertical Position [m]
-        wfr1.mesh.yFin      = self.yMiddle + self.yWidth / 2.0  # Final Vertical Position [m]
-        wfr1.partBeam       = elecBeam
-
-        return wfr1
+    # def build_wavefront_mesh_for_many_wavelengths(self, Ne = 1,
+    #                                               p=(500.0e-9, 600e-9)):
+    #     """
+    #     Build a wavefront mesh to hold the generated radiation data. Written
+    #     for multiple wavelengths
+    #
+    #     :return:
+    #     """
+    #     # convert wavelength to eV
+    #     photon_e_lo = 4.135e-15 * 299792458.0 / p[0]
+    #     photon_e_hi = 4.135e-15 * 299792458.0 / p[1]
+    #
+    #     # Set up an electron beam faking a single particle
+    #     # This is what is used to generate the SR.
+    #     elecBeam = SRWLPartBeam()
+    #     elecBeam.Iavg = 0.5  # Average Current [A]
+    #     elecBeam.partStatMom1.x       = self.partTraj.partInitCond.x
+    #     elecBeam.partStatMom1.y       = self.partTraj.partInitCond.y
+    #     elecBeam.partStatMom1.z       = self.partTraj.partInitCond.z
+    #     elecBeam.partStatMom1.xp      = self.partTraj.partInitCond.xp
+    #     elecBeam.partStatMom1.yp      = self.partTraj.partInitCond.yp
+    #     elecBeam.partStatMom1.gamma   = self.beam_energy / 0.51099890221e-03
+    #
+    #     # *********** Wavefront data placeholder
+    #     wfr1 = SRWLWfr()  # For spectrum vs photon energy
+    #     # Numbers of points vs Photon Energy, Horizontal and Vertical Positions
+    #     wfr1.allocate(Ne, self.Nx, self.Ny)
+    #     wfr1.mesh.zStart    = self.zSrCalc  # Longitudinal Position [m] from
+    #     # Center of Straight Section at which SR has to be calculated
+    #     wfr1.mesh.eStart    = photon_e_lo  # Initial Photon Energy [eV]
+    #     wfr1.mesh.eFin      = photon_e_hi  # Final Photon Energy [eV]
+    #     wfr1.mesh.xStart    = self.xMiddle - self.xWidth / 2.0  # Initial Horizontal Position [m]
+    #     wfr1.mesh.xFin      = self.xMiddle + self.xWidth / 2.0  # Final Horizontal Position [m]
+    #     wfr1.mesh.yStart    = self.yMiddle - self.yWidth / 2.0  # Initial Vertical Position [m]
+    #     wfr1.mesh.yFin      = self.yMiddle + self.yWidth / 2.0  # Final Vertical Position [m]
+    #     wfr1.partBeam       = elecBeam
+    #
+    #     return wfr1
 
     def run_SR_calculation(self):
         # ***********Precision Parameters for SR calculation
@@ -448,6 +484,101 @@ class F2_Single_Magnet_Sim:
                                              1./yScale,
                                              0.5,
                                              0.5])
+
+class F2_Single_Magnet_Single_Color_Sim(F2_Single_Magnet_Sim):
+    def __init__(self, Nx=2**10, goal_Bend_Angle = 6.0, meshZ=2.0,
+                 ph_lam=0.65e-6):
+        super(F2_Single_Magnet_Single_Color_Sim, self).__init__(Nx,
+                                                   goal_Bend_Angle,
+                                                   meshZ,
+                                                   ph_lam)
+        # Setup the wavefront
+        self.wfr = self.build_wavefront_mesh()
+
+    def build_wavefront_mesh(self):
+        """
+        Build a wavefront mesh to hold the generated radiation data. Written
+        for single wavelength
+
+        :return:
+        """
+        # convert wavelength to eV
+        photon_e = 4.135e-15 * 299792458.0 / self.photon_lam
+
+        # Set up an electron beam faking a single particle
+        # This is what is used to generate the SR.
+        elecBeam = SRWLPartBeam()
+        elecBeam.Iavg = 0.5  # Average Current [A]
+        elecBeam.partStatMom1.x       = self.partTraj.partInitCond.x
+        elecBeam.partStatMom1.y       = self.partTraj.partInitCond.y
+        elecBeam.partStatMom1.z       = self.partTraj.partInitCond.z
+        elecBeam.partStatMom1.xp      = self.partTraj.partInitCond.xp
+        elecBeam.partStatMom1.yp      = self.partTraj.partInitCond.yp
+        elecBeam.partStatMom1.gamma   = self.beam_energy / 0.51099890221e-03
+
+        # *********** Wavefront data placeholder
+        wfr1 = SRWLWfr()  # For spectrum vs photon energy
+        # Numbers of points vs Photon Energy, Horizontal and Vertical Positions
+        wfr1.allocate(1, self.Nx, self.Ny)
+        wfr1.mesh.zStart    = self.zSrCalc  # Longitudinal Position [m] from
+        # Center of Straight Section at which SR has to be calculated
+        wfr1.mesh.eStart    = photon_e  # Initial Photon Energy [eV]
+        wfr1.mesh.eFin      = photon_e  # Final Photon Energy [eV]
+        wfr1.mesh.xStart    = self.xMiddle - self.xWidth / 2.0  # Initial Horizontal Position [m]
+        wfr1.mesh.xFin      = self.xMiddle + self.xWidth / 2.0  # Final Horizontal Position [m]
+        wfr1.mesh.yStart    = self.yMiddle - self.yWidth / 2.0  # Initial Vertical Position [m]
+        wfr1.mesh.yFin      = self.yMiddle + self.yWidth / 2.0  # Final Vertical Position [m]
+        wfr1.partBeam       = elecBeam
+
+        return wfr1
+
+class F2_Single_Magnet_Multiple_Color_Sim(F2_Single_Magnet_Sim):
+    def __init__(self, Nx=2 ** 10, goal_Bend_Angle=6.0, meshZ=2.0,
+                 ph_lam=0.65e-6):
+        super(F2_Single_Magnet_Multiple_Color_Sim, self).__init__(Nx,
+                                                                goal_Bend_Angle,
+                                                                meshZ,
+                                                                ph_lam)
+        # Setup the wavefront
+        self.wfr = self.build_wavefront_mesh()
+
+    def build_wavefront_mesh(self, Ne = 5, p=(500.0e-9, 600e-9)):
+        """
+        Build a wavefront mesh to hold the generated radiation data. Written
+        for multiple wavelengths
+
+        :return:
+        """
+        # convert wavelength to eV
+        photon_e_lo = 4.135e-15 * 299792458.0 / p[0]
+        photon_e_hi = 4.135e-15 * 299792458.0 / p[1]
+
+        # Set up an electron beam faking a single particle
+        # This is what is used to generate the SR.
+        elecBeam = SRWLPartBeam()
+        elecBeam.Iavg = 0.5  # Average Current [A]
+        elecBeam.partStatMom1.x       = self.partTraj.partInitCond.x
+        elecBeam.partStatMom1.y       = self.partTraj.partInitCond.y
+        elecBeam.partStatMom1.z       = self.partTraj.partInitCond.z
+        elecBeam.partStatMom1.xp      = self.partTraj.partInitCond.xp
+        elecBeam.partStatMom1.yp      = self.partTraj.partInitCond.yp
+        elecBeam.partStatMom1.gamma   = self.beam_energy / 0.51099890221e-03
+
+        # *********** Wavefront data placeholder
+        wfr1 = SRWLWfr()  # For spectrum vs photon energy
+        # Numbers of points vs Photon Energy, Horizontal and Vertical Positions
+        wfr1.allocate(Ne, self.Nx, self.Ny)
+        wfr1.mesh.zStart    = self.zSrCalc  # Longitudinal Position [m] from
+        # Center of Straight Section at which SR has to be calculated
+        wfr1.mesh.eStart    = photon_e_lo  # Initial Photon Energy [eV]
+        wfr1.mesh.eFin      = photon_e_hi  # Final Photon Energy [eV]
+        wfr1.mesh.xStart    = self.xMiddle - self.xWidth / 2.0  # Initial Horizontal Position [m]
+        wfr1.mesh.xFin      = self.xMiddle + self.xWidth / 2.0  # Final Horizontal Position [m]
+        wfr1.mesh.yStart    = self.yMiddle - self.yWidth / 2.0  # Initial Vertical Position [m]
+        wfr1.mesh.yFin      = self.yMiddle + self.yWidth / 2.0  # Final Vertical Position [m]
+        wfr1.partBeam       = elecBeam
+
+        return wfr1
 
 if __name__ == '__main__':
 
