@@ -36,6 +36,7 @@ from SRW_Utilities import *
 import matplotlib.pyplot as plt
 import numpy as np
 import time
+from operator import add
 # import h5py
 # Some matplotlib settings.
 plt.close('all')
@@ -485,9 +486,49 @@ class F2_Single_Magnet_Sim:
                                              0.5,
                                              0.5])
 
+    def lineout(self, xOrY=0, N=1):
+        """
+        Function for producing a lineout of the intensity of a given wavefront.
+
+        :param xOrY: 0 means the lineout is along the x-axis, 1 means y-axis
+        :param N: The pixel number (for x or y) to take the lineout along
+        :return: vector of positions, the lineout
+        """
+        Nx = self.wfr.mesh.nx
+        Ny = self.wfr.mesh.ny
+
+        # Extract the single particle intensity
+        arI1 = array('f', [0] * self.wfr.mesh.nx * self.wfr.mesh.ny)
+        srwl.CalcIntFromElecField(arI1, self.wfr, 6, 0, 3, self.wfr.mesh.eStart, 0, 0)
+        B = np.reshape(arI1, [Ny, Nx])
+
+        if xOrY == 0:
+            pMin = 1e3 * self.wfr.mesh.xStart
+            pMax = 1e3 * self.wfr.mesh.xFin
+            pN = self.wfr.mesh.nx
+            lineout = B[N, :]
+        else:
+            pMin = 1e3 * self.wfr.mesh.yStart
+            pMax = 1e3 * self.wfr.mesh.yFin
+            pN = self.wfr.mesh.ny
+            lineout = B[:, N]
+
+        return np.linspace(pMin, pMax, pN), lineout
+
+    def add_wavefront(self, wfr_in):
+        """
+        Method to add a wavefront to the wavefront contained in this class.
+        This method assumes you're adding like to like. It does no checking
+        of mesh size, mesh density or photon counts.
+
+        :param wfr_in: The wavefront to add to the current wavefront
+        :return: nothing, wavefront is added in place
+        """
+        self.wfr.addE(wfr_in)
+
 class F2_Single_Magnet_Single_Color_Sim(F2_Single_Magnet_Sim):
     def __init__(self, Nx=2**10, goal_Bend_Angle = 6.0, meshZ=2.0,
-                 ph_lam=0.65e-6):
+                 ph_lam=0.60e-6):
         super(F2_Single_Magnet_Single_Color_Sim, self).__init__(Nx,
                                                    goal_Bend_Angle,
                                                    meshZ,
@@ -534,7 +575,7 @@ class F2_Single_Magnet_Single_Color_Sim(F2_Single_Magnet_Sim):
 
 class F2_Single_Magnet_Multiple_Color_Sim(F2_Single_Magnet_Sim):
     def __init__(self, Nx=2 ** 10, goal_Bend_Angle=6.0, meshZ=2.0,
-                 ph_lam=0.65e-6):
+                 ph_lam=0.60e-6):
         super(F2_Single_Magnet_Multiple_Color_Sim, self).__init__(Nx,
                                                                 goal_Bend_Angle,
                                                                 meshZ,
@@ -542,7 +583,7 @@ class F2_Single_Magnet_Multiple_Color_Sim(F2_Single_Magnet_Sim):
         # Setup the wavefront
         self.wfr = self.build_wavefront_mesh()
 
-    def build_wavefront_mesh(self, Ne = 5, p=(500.0e-9, 600e-9)):
+    def build_wavefront_mesh(self, Ne = 2, p=(500.0e-9, 600e-9)):
         """
         Build a wavefront mesh to hold the generated radiation data. Written
         for multiple wavelengths
@@ -579,6 +620,40 @@ class F2_Single_Magnet_Multiple_Color_Sim(F2_Single_Magnet_Sim):
         wfr1.partBeam       = elecBeam
 
         return wfr1
+
+    def add_specific_color_wavefront(self, wfr_in, Nc):
+        """
+        Method to update only one of the colors of this multiple color
+        simulation. You may want to do this when you are simulating and
+        tracking each color separately to add in QE effects from cameras.
+        This method adds the color, it does not replace it.
+
+        Nc is the color you're adding. An SRWLWfr has mesh.ne colors that run
+        from mesh.eStart to mesh.eFin. For example:
+        ne = 3, eStart = 500 nm, eFin = 600 nm. Then Nc = 0 is 500 nm,
+        Nx = 1 is 550 nm, and Nc = 2 is 600 nm.
+
+        :param wfr_in: The wavefront to add to the multiple color wavefront mesh
+        :param Nc: The color you're adding.
+        :return:
+        """
+
+        self.wfr.arEx[2 * Nc :: 2 * self.wfr.mesh.ne] = \
+            list(map(add,
+                     self.wfr.arEx[2 * Nc :: 2 * self.wfr.mesh.ne],
+                     wfr_in.arEx[0::2]))
+        self.wfr.arEx[2 * Nc + 1 :: 2 * self.wfr.mesh.ne] = \
+            list(map(add,
+                     self.wfr.arEx[2 * Nc + 1 :: 2 * self.wfr.mesh.ne],
+                     wfr_in.arEx[1::2]))
+        self.wfr.arEy[2 * Nc :: 2 * self.wfr.mesh.ne] = \
+            list(map(add,
+                     self.wfr.arEy[2 * Nc:: 2 * self.wfr.mesh.ne],
+                     wfr_in.arEy[0::2]))
+        self.wfr.arEy[2 * Nc + 1 :: 2 * self.wfr.mesh.ne] = \
+            list(map(add,
+                     self.wfr.arEy[2 * Nc + 1:: 2 * self.wfr.mesh.ne],
+                     wfr_in.arEy[1::2]))
 
 if __name__ == '__main__':
 

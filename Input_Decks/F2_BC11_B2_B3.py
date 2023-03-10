@@ -65,12 +65,54 @@ if __name__ == '__main__':
     B2B3_secon_edge.resize_wavefront()
 
     # Combine the two wavefronts
-    wfr = deepcopy(B2B3_secon_edge.wfr)
-    wfr.addE(B2B3_first_edge.wfr)
-    plot_SRW_intensity(wfr, title=sim_title)
+    comb = deepcopy(B2B3_first_edge)
+    comb.add_wavefront(B2B3_secon_edge.wfr)
+    # wfr = deepcopy(B2B3_secon_edge.wfr)
+    # wfr.addE(B2B3_first_edge.wfr)
+    plot_SRW_intensity(comb.wfr, title=sim_title)
 
+    what, lol = comb.lineout(xOrY=0, N=512)
+    plt.close(234)
+    plt.figure(234, facecolor='w')
+    plt.plot(what, lol)
 
+    B1_500 = F2_Single_Magnet_Single_Color_Sim(Nx=2**10,
+                                  goal_Bend_Angle=-.105 * 180 / np.pi,
+                                  meshZ=B2B3_first_edge_to_window,
+                                  ph_lam=0.50e-6)
+    B1_500.run_SR_calculation()
+    B1_500.propagate_wavefront_through_window()
+    B1_500.resize_wavefront()
 
+    B1_600 = F2_Single_Magnet_Single_Color_Sim(Nx=2**10,
+                                  goal_Bend_Angle=-.105 * 180 / np.pi,
+                                  meshZ=B2B3_first_edge_to_window,
+                                  ph_lam=0.60e-6)
+    B1_600.run_SR_calculation()
+    B1_600.propagate_wavefront_through_window()
+    B1_600.resize_wavefront()
 
+    B2_500 = F2_Single_Magnet_Single_Color_Sim(Nx=2 ** 10,
+                                               goal_Bend_Angle=.105 * 180 / np.pi,
+                                               meshZ=B2B3_secon_edge_to_window,
+                                               ph_lam=0.50e-6)
+    B2_500.run_SR_calculation()
+    B2_500.propagate_wavefront_through_window()
+    B2_500.resize_wavefront()
 
+    B2_600 = F2_Single_Magnet_Single_Color_Sim(Nx=2 ** 10,
+                                               goal_Bend_Angle=.105 * 180 / np.pi,
+                                               meshZ=B2B3_secon_edge_to_window,
+                                               ph_lam=0.60e-6)
+    B2_600.run_SR_calculation()
+    B2_600.propagate_wavefront_through_window()
+    B2_600.resize_wavefront()
 
+    comb = F2_Single_Magnet_Multiple_Color_Sim(Nx=2 ** 10,
+                                               goal_Bend_Angle=.105 * 180 / np.pi,
+                                               meshZ=B2B3_secon_edge_to_window,
+                                               ph_lam=0.60e-6)
+    comb.add_specific_color_wavefront(B1_500.wfr, 0)
+    comb.add_specific_color_wavefront(B1_600.wfr, 1)
+    comb.add_specific_color_wavefront(B2_500.wfr, 0)
+    comb.add_specific_color_wavefront(B2_600.wfr, 1)
