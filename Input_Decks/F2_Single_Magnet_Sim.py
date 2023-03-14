@@ -250,81 +250,6 @@ class F2_Single_Magnet_Sim:
         self.partTraj  = self.build_particle_trajectory()
         self.set_simulation_length()
 
-    # def build_wavefront_mesh(self):
-    #     """
-    #     Build a wavefront mesh to hold the generated radiation data. Written
-    #     for single wavelength
-    #
-    #     :return:
-    #     """
-    #     # convert wavelength to eV
-    #     photon_e = 4.135e-15 * 299792458.0 / self.photon_lam
-    #
-    #     # Set up an electron beam faking a single particle
-    #     # This is what is used to generate the SR.
-    #     elecBeam = SRWLPartBeam()
-    #     elecBeam.Iavg = 0.5  # Average Current [A]
-    #     elecBeam.partStatMom1.x       = self.partTraj.partInitCond.x
-    #     elecBeam.partStatMom1.y       = self.partTraj.partInitCond.y
-    #     elecBeam.partStatMom1.z       = self.partTraj.partInitCond.z
-    #     elecBeam.partStatMom1.xp      = self.partTraj.partInitCond.xp
-    #     elecBeam.partStatMom1.yp      = self.partTraj.partInitCond.yp
-    #     elecBeam.partStatMom1.gamma   = self.beam_energy / 0.51099890221e-03
-    #
-    #     # *********** Wavefront data placeholder
-    #     wfr1 = SRWLWfr()  # For spectrum vs photon energy
-    #     # Numbers of points vs Photon Energy, Horizontal and Vertical Positions
-    #     wfr1.allocate(1, self.Nx, self.Ny)
-    #     wfr1.mesh.zStart    = self.zSrCalc  # Longitudinal Position [m] from
-    #     # Center of Straight Section at which SR has to be calculated
-    #     wfr1.mesh.eStart    = photon_e  # Initial Photon Energy [eV]
-    #     wfr1.mesh.eFin      = photon_e  # Final Photon Energy [eV]
-    #     wfr1.mesh.xStart    = self.xMiddle - self.xWidth / 2.0  # Initial Horizontal Position [m]
-    #     wfr1.mesh.xFin      = self.xMiddle + self.xWidth / 2.0  # Final Horizontal Position [m]
-    #     wfr1.mesh.yStart    = self.yMiddle - self.yWidth / 2.0  # Initial Vertical Position [m]
-    #     wfr1.mesh.yFin      = self.yMiddle + self.yWidth / 2.0  # Final Vertical Position [m]
-    #     wfr1.partBeam       = elecBeam
-    #
-    #     return wfr1
-
-    # def build_wavefront_mesh_for_many_wavelengths(self, Ne = 1,
-    #                                               p=(500.0e-9, 600e-9)):
-    #     """
-    #     Build a wavefront mesh to hold the generated radiation data. Written
-    #     for multiple wavelengths
-    #
-    #     :return:
-    #     """
-    #     # convert wavelength to eV
-    #     photon_e_lo = 4.135e-15 * 299792458.0 / p[0]
-    #     photon_e_hi = 4.135e-15 * 299792458.0 / p[1]
-    #
-    #     # Set up an electron beam faking a single particle
-    #     # This is what is used to generate the SR.
-    #     elecBeam = SRWLPartBeam()
-    #     elecBeam.Iavg = 0.5  # Average Current [A]
-    #     elecBeam.partStatMom1.x       = self.partTraj.partInitCond.x
-    #     elecBeam.partStatMom1.y       = self.partTraj.partInitCond.y
-    #     elecBeam.partStatMom1.z       = self.partTraj.partInitCond.z
-    #     elecBeam.partStatMom1.xp      = self.partTraj.partInitCond.xp
-    #     elecBeam.partStatMom1.yp      = self.partTraj.partInitCond.yp
-    #     elecBeam.partStatMom1.gamma   = self.beam_energy / 0.51099890221e-03
-    #
-    #     # *********** Wavefront data placeholder
-    #     wfr1 = SRWLWfr()  # For spectrum vs photon energy
-    #     # Numbers of points vs Photon Energy, Horizontal and Vertical Positions
-    #     wfr1.allocate(Ne, self.Nx, self.Ny)
-    #     wfr1.mesh.zStart    = self.zSrCalc  # Longitudinal Position [m] from
-    #     # Center of Straight Section at which SR has to be calculated
-    #     wfr1.mesh.eStart    = photon_e_lo  # Initial Photon Energy [eV]
-    #     wfr1.mesh.eFin      = photon_e_hi  # Final Photon Energy [eV]
-    #     wfr1.mesh.xStart    = self.xMiddle - self.xWidth / 2.0  # Initial Horizontal Position [m]
-    #     wfr1.mesh.xFin      = self.xMiddle + self.xWidth / 2.0  # Final Horizontal Position [m]
-    #     wfr1.mesh.yStart    = self.yMiddle - self.yWidth / 2.0  # Initial Vertical Position [m]
-    #     wfr1.mesh.yFin      = self.yMiddle + self.yWidth / 2.0  # Final Vertical Position [m]
-    #     wfr1.partBeam       = elecBeam
-    #
-    #     return wfr1
 
     def run_SR_calculation(self):
         # ***********Precision Parameters for SR calculation
@@ -503,13 +428,13 @@ class F2_Single_Magnet_Sim:
         B = np.reshape(arI1, [Ny, Nx])
 
         if xOrY == 0:
-            pMin = 1e3 * self.wfr.mesh.xStart
-            pMax = 1e3 * self.wfr.mesh.xFin
+            pMin = self.wfr.mesh.xStart
+            pMax = self.wfr.mesh.xFin
             pN = self.wfr.mesh.nx
             lineout = B[N, :]
         else:
-            pMin = 1e3 * self.wfr.mesh.yStart
-            pMax = 1e3 * self.wfr.mesh.yFin
+            pMin = self.wfr.mesh.yStart
+            pMax = self.wfr.mesh.yFin
             pN = self.wfr.mesh.ny
             lineout = B[:, N]
 
@@ -639,21 +564,30 @@ class F2_Single_Magnet_Multiple_Color_Sim(F2_Single_Magnet_Sim):
         """
 
         self.wfr.arEx[2 * Nc :: 2 * self.wfr.mesh.ne] = \
-            list(map(add,
-                     self.wfr.arEx[2 * Nc :: 2 * self.wfr.mesh.ne],
-                     wfr_in.arEx[0::2]))
+            array('f', list(
+                map(add,
+                    self.wfr.arEx[2 * Nc:: 2 * self.wfr.mesh.ne],
+                    wfr_in.arEx[0::2]))
+                  )
+
         self.wfr.arEx[2 * Nc + 1 :: 2 * self.wfr.mesh.ne] = \
-            list(map(add,
-                     self.wfr.arEx[2 * Nc + 1 :: 2 * self.wfr.mesh.ne],
+            array('f', list(
+                map(add,
+                    self.wfr.arEx[2 * Nc + 1 :: 2 * self.wfr.mesh.ne],
                      wfr_in.arEx[1::2]))
+                  )
         self.wfr.arEy[2 * Nc :: 2 * self.wfr.mesh.ne] = \
-            list(map(add,
-                     self.wfr.arEy[2 * Nc:: 2 * self.wfr.mesh.ne],
+            array('f', list(
+                map(add,
+                    self.wfr.arEy[2 * Nc:: 2 * self.wfr.mesh.ne],
                      wfr_in.arEy[0::2]))
+                  )
         self.wfr.arEy[2 * Nc + 1 :: 2 * self.wfr.mesh.ne] = \
-            list(map(add,
-                     self.wfr.arEy[2 * Nc + 1:: 2 * self.wfr.mesh.ne],
+            array('f', list(
+                map(add,
+                    self.wfr.arEy[2 * Nc + 1:: 2 * self.wfr.mesh.ne],
                      wfr_in.arEy[1::2]))
+            )
 
 if __name__ == '__main__':
 
