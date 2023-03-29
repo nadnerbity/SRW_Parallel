@@ -250,7 +250,6 @@ class F2_Single_Magnet_Sim:
         self.partTraj  = self.build_particle_trajectory()
         self.set_simulation_length()
 
-
     def run_SR_calculation(self):
         # ***********Precision Parameters for SR calculation
         # SR calculation method: 0- "manual", 1- "auto-undulator",
@@ -451,6 +450,28 @@ class F2_Single_Magnet_Sim:
         """
         self.wfr.addE(wfr_in)
 
+    def match_wavefront_mesh_dimensions(self, wfr_in):
+        """
+        Update the mesh dimensions of the instance mesh to match the mesh
+        dimensions of the wfr_in mesh. This changes wfr.mesh.xStart, xFin,
+        yStart, yFin
+
+        :param wfr_in: The wavefront to copy the mesh parameters from
+        :return: Nothing, modifies instance mesh.
+        """
+        try:
+            self.wfr.mesh
+        except:
+            print('Wavefront not defined for current simulation')
+            return
+
+        self.wfr.mesh.xStart = wfr_in.mesh.xStart
+        self.wfr.mesh.xFin   = wfr_in.mesh.xFin
+        self.wfr.mesh.yStart = wfr_in.mesh.yStart
+        self.wfr.mesh.yFin   = wfr_in.mesh.yFin
+        return
+
+
 class F2_Single_Magnet_Single_Color_Sim(F2_Single_Magnet_Sim):
     def __init__(self, Nx=2**10, goal_Bend_Angle = 6.0, meshZ=2.0,
                  ph_lam=0.60e-6):
@@ -506,7 +527,7 @@ class F2_Single_Magnet_Multiple_Color_Sim(F2_Single_Magnet_Sim):
                                                                 meshZ,
                                                                 ph_lam)
         # Setup the wavefront
-        self.wfr = self.build_wavefront_mesh()
+        self.build_wavefront_mesh()
 
     def build_wavefront_mesh(self, Ne = 2, p=(500.0e-9, 600e-9)):
         """
@@ -544,7 +565,8 @@ class F2_Single_Magnet_Multiple_Color_Sim(F2_Single_Magnet_Sim):
         wfr1.mesh.yFin      = self.yMiddle + self.yWidth / 2.0  # Final Vertical Position [m]
         wfr1.partBeam       = elecBeam
 
-        return wfr1
+        self.wfr = wfr1
+        return
 
     def add_specific_color_wavefront(self, wfr_in, Nc):
         """
