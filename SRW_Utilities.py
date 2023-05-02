@@ -428,3 +428,18 @@ def plot_two_SRW_intensity(wfr1, wfr2, title1="Input 1", title2="Input 2",
     plt.clim([0, np.max(C)])
     plt.title(title2, fontsize=20)
     plt.tight_layout()
+
+
+def write_sim_to_disc(sim, filename):
+    sim.creation_date = time.strftime("%y_%m_%d_%H_%M_%S", time.localtime())
+    filename = filename + '.pkl'
+    f = open(filename, 'wb')
+    pickle.dump(sim, f)
+    f.close()
+
+def load_sim_from_disc(filename):
+    filename = filename + '.pkl'
+    f = open(filename, 'rb')
+    sim = pickle.load(f)
+    f.close()
+    return sim

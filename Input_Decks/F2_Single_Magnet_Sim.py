@@ -328,10 +328,12 @@ class F2_Single_Magnet_Sim:
             [paramsDrift])
         srwl.PropagElecField(self.wfr, a_drift)
 
-    def propagate_wavefront_through_window(self, windowToLens=0.215):
+    def propagate_wavefront_through_window(self,
+                                           appOne=0.038, windowToLens=0.215):
         """
         Propagate the wavefront through an aperture, lens and some finite
         distance
+        :param appOne: The diameter, in meters, of the first aperture
         :param windowToLens: The distance from the window to the lens, in meters
         :return:  N/A
         """
@@ -355,7 +357,7 @@ class F2_Single_Magnet_Sim:
         paramsDrift = [0, 0, 1., 1, 0, 1., 1., 1., 1., 0, 0, 0]
 
         a_drift = SRWLOptC(
-            [SRWLOptA(_shape='c', _ap_or_ob='a', _Dx=0.038),
+            [SRWLOptA(_shape='c', _ap_or_ob='a', _Dx=appOne),
              SRWLOptD(windowToLens),
              SRWLOptA(_shape='c', _ap_or_ob='a', _Dx=0.075),
              SRWLOptL(focal_length, focal_length),

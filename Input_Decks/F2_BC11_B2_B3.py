@@ -38,21 +38,22 @@ plt.ion()
 if __name__ == '__main__':
 
     # Name for plots of this simulation
-    sim_title = "B2 and B2"
+    # sim_title = "BC11_B2_and_B2"
+    sim_title = __file__
 
     # Create the simulation
-    B2B3_first_edge_to_window = 1.795 - 0.215 # in meters
-    B2B3_secon_edge_to_window = 1.795 - 0.215 - 0.75  # in meters
+    first_edge_to_window = 1.58 # in meters
+    secon_edge_to_window = 0.83  # in meters
 
 
     colors = np.linspace(400e-9, 800e-9, 10)
-    mags = [[B2B3_first_edge_to_window, -1.], [B2B3_secon_edge_to_window, 1.0]]
+    mags = [[first_edge_to_window, -1.], [secon_edge_to_window, 1.0]]
     sim_list = list(itertools.product(range(len(colors)), mags))
-    NN = 2**9
+    NN = 2**10
 
     comb2 = F2_Single_Magnet_Multiple_Color_Sim(Nx=NN,
                                                goal_Bend_Angle=.105 * 180 / np.pi,
-                                               meshZ=B2B3_secon_edge_to_window,
+                                               meshZ=secon_edge_to_window,
                                                ph_lam=0.60e-6)
     # Ensure the mesh has the correct number of wavelengths
     comb2.build_wavefront_mesh(Ne=len(colors), p=(colors[0], colors[-1]))
@@ -65,7 +66,7 @@ if __name__ == '__main__':
                                                meshZ=L[1][0],
                                                ph_lam=colors[L[0]])
         a_sim.run_SR_calculation()
-        a_sim.propagate_wavefront_through_window()
+        a_sim.propagate_wavefront_through_window(windowToLens=0.215)
         a_sim.resize_wavefront()
         comb2.add_specific_color_wavefront(a_sim.wfr, L[0])
 
@@ -85,4 +86,4 @@ if __name__ == '__main__':
               + ', ' + str(colors[0]) + ', ' + str(colors[-1]) +
               ', Nx = ' + str(comb2.wfr.mesh.nx))
 
-
+    # write_sim_to_disc(comb2, sim_title)
