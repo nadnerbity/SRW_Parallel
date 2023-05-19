@@ -44,23 +44,29 @@ if __name__ == '__main__':
     first_edge_to_window = 3.16 # in meters
     secon_edge_to_window = 0.76  # in meters
     NN = 2**8
-    wavelength = 400
+    wavelength = 450
+    NNe = 8
+    pRange = (450e-9, 500e-9)
 
-    a_sim = F2_Single_Magnet_Single_Color_Sim(Nx=NN,
+    a_sim = F2_Single_Magnet_Multiple_Color_Sim(Nx=NN,
                                               goal_Bend_Angle=
                                               1 * .105 * 180 /
                                               np.pi,
                                               meshZ=first_edge_to_window,
-                                              ph_lam=wavelength*1e-9)
+                                              ph_lam=wavelength*1e-9,
+                                              Ne = NNe,
+                                              p=pRange)
     a_sim.resize_wavefront(newX=10.e-3, newY=10.0e-3)
     a_sim.run_SR_calculation()
 
-    b_sim = F2_Single_Magnet_Single_Color_Sim(Nx=NN,
+    b_sim = F2_Single_Magnet_Multiple_Color_Sim(Nx=NN,
                                               goal_Bend_Angle=
                                               1 * .105 * 180 /
                                               np.pi,
                                               meshZ=secon_edge_to_window,
-                                              ph_lam=wavelength*1e-9)
+                                              ph_lam=wavelength*1e-9,
+                                              Ne = NNe,
+                                              p=pRange)
     b_sim.resize_wavefront(newX=10.e-3, newY=10.0e-3)
     b_sim.run_SR_calculation()
 

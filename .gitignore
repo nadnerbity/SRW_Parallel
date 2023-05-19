@@ -1,3 +1,8 @@
 # Ignore pickles
 *.pkl
 **/*.pkl
+*.h5
+**/*.h5
+.DS*
+._*
+__pycache__*

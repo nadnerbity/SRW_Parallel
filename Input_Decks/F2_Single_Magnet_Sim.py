@@ -473,6 +473,34 @@ class F2_Single_Magnet_Sim:
         self.wfr.mesh.yFin   = wfr_in.mesh.yFin
         return
 
+    def dump_wavefront_to_h5(self, filename='default.h5'):
+        hf = h5py.File(filename, 'w')
+        hf.create_dataset('xStart', data = self.wfr.mesh.xStart)
+        hf.create_dataset('xFin', data = self.wfr.mesh.xFin)
+        hf.create_dataset('nx', data = self.wfr.mesh.nx)
+
+        hf.create_dataset('yStart', data = self.wfr.mesh.yStart)
+        hf.create_dataset('yFin', data = self.wfr.mesh.yFin)
+        hf.create_dataset('ny', data = self.wfr.mesh.ny)
+
+        hf.create_dataset('ne', data=self.wfr.mesh.ne)
+        hf.create_dataset('eStart', data=self.wfr.mesh.eStart)
+        hf.create_dataset('eFin', data=self.wfr.mesh.eFin)
+
+        Nx = self.wfr.mesh.nx
+        Ny = self.wfr.mesh.ny
+
+        # Extract the single particle intensity
+        arI1 = array('f', [0] * Nx * Ny)
+        srwl.CalcIntFromElecField(arI1, self.wfr, 6, 0, 3,
+                                  self.wfr.mesh.eStart, 0, 0)
+        B = np.reshape(arI1, [Ny, Nx])
+
+        hf.create_dataset('I', data = B)
+
+        hf.close()
+
+
 
 class F2_Single_Magnet_Single_Color_Sim(F2_Single_Magnet_Sim):
     def __init__(self, Nx=2**10, goal_Bend_Angle = 6.0, meshZ=2.0,
@@ -521,41 +549,22 @@ class F2_Single_Magnet_Single_Color_Sim(F2_Single_Magnet_Sim):
 
         return wfr1
 
-    def dump_wavefront_to_h5(self, filename='default.h5'):
-        hf = h5py.File(filename, 'w')
-        hf.create_dataset('xStart', data = self.wfr.mesh.xStart)
-        hf.create_dataset('xFin', data = self.wfr.mesh.xFin)
-        hf.create_dataset('nx', data = self.wfr.mesh.nx)
-
-        hf.create_dataset('yStart', data = self.wfr.mesh.yStart)
-        hf.create_dataset('yFin', data = self.wfr.mesh.yFin)
-        hf.create_dataset('ny', data = self.wfr.mesh.ny)
-
-        Nx = self.wfr.mesh.nx
-        Ny = self.wfr.mesh.ny
-
-        # Extract the single particle intensity
-        arI1 = array('f', [0] * Nx * Ny)
-        srwl.CalcIntFromElecField(arI1, self.wfr, 6, 0, 3,
-                                  self.wfr.mesh.eStart, 0, 0)
-        B = np.reshape(arI1, [Ny, Nx])
-
-        hf.create_dataset('I', data = B)
-
-        hf.close()
 
 
 class F2_Single_Magnet_Multiple_Color_Sim(F2_Single_Magnet_Sim):
     def __init__(self, Nx=2 ** 10, goal_Bend_Angle=6.0, meshZ=2.0,
-                 ph_lam=0.60e-6):
+                 ph_lam=0.60e-6, Ne = 2, p=(500.0e-9, 600e-9)):
         super(F2_Single_Magnet_Multiple_Color_Sim, self).__init__(Nx,
                                                                 goal_Bend_Angle,
                                                                 meshZ,
                                                                 ph_lam)
+
+        self.Ne = Ne
+        self.p  = p
         # Setup the wavefront
         self.build_wavefront_mesh()
 
-    def build_wavefront_mesh(self, Ne = 2, p=(500.0e-9, 600e-9)):
+    def build_wavefront_mesh(self):
         """
         Build a wavefront mesh to hold the generated radiation data. Written
         for multiple wavelengths
@@ -563,8 +572,8 @@ class F2_Single_Magnet_Multiple_Color_Sim(F2_Single_Magnet_Sim):
         :return:
         """
         # convert wavelength to eV
-        photon_e_lo = 4.135e-15 * 299792458.0 / p[0]
-        photon_e_hi = 4.135e-15 * 299792458.0 / p[1]
+        photon_e_lo = 4.135e-15 * 299792458.0 / self.p[0]
+        photon_e_hi = 4.135e-15 * 299792458.0 / self.p[1]
 
         # Set up an electron beam faking a single particle
         # This is what is used to generate the SR.
@@ -580,7 +589,7 @@ class F2_Single_Magnet_Multiple_Color_Sim(F2_Single_Magnet_Sim):
         # *********** Wavefront data placeholder
         wfr1 = SRWLWfr()  # For spectrum vs photon energy
         # Numbers of points vs Photon Energy, Horizontal and Vertical Positions
-        wfr1.allocate(Ne, self.Nx, self.Ny)
+        wfr1.allocate(self.Ne, self.Nx, self.Ny)
         wfr1.mesh.zStart    = self.zSrCalc  # Longitudinal Position [m] from
         # Center of Straight Section at which SR has to be calculated
         wfr1.mesh.eStart    = photon_e_lo  # Initial Photon Energy [eV]
