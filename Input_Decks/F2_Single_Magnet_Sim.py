@@ -37,7 +37,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import time
 from operator import add
-# import h5py
+import h5py
 # Some matplotlib settings.
 plt.close('all')
 plt.ion()
@@ -95,7 +95,7 @@ class F2_Single_Magnet_Sim:
     use_termin 		= 1 #1 #Use "terminating terms" (i.e. asymptotic expansions
     # at  zStartInteg and zEndInteg) or not (1 or 0 respectively)
     # Precision for SR integration
-    srPrec 		    = 0.05 #0.01
+    srPrec 		    = 0.05 #0.05
 
     def __init__(self, Nx=2**10, goal_Bend_Angle = 6.0, meshZ=2.0, ph_lam=0.65e-6):
         """
@@ -520,6 +520,30 @@ class F2_Single_Magnet_Single_Color_Sim(F2_Single_Magnet_Sim):
         wfr1.partBeam       = elecBeam
 
         return wfr1
+
+    def dump_wavefront_to_h5(self, filename='default.h5'):
+        hf = h5py.File(filename, 'w')
+        hf.create_dataset('xStart', data = self.wfr.mesh.xStart)
+        hf.create_dataset('xFin', data = self.wfr.mesh.xFin)
+        hf.create_dataset('nx', data = self.wfr.mesh.nx)
+
+        hf.create_dataset('yStart', data = self.wfr.mesh.yStart)
+        hf.create_dataset('yFin', data = self.wfr.mesh.yFin)
+        hf.create_dataset('ny', data = self.wfr.mesh.ny)
+
+        Nx = self.wfr.mesh.nx
+        Ny = self.wfr.mesh.ny
+
+        # Extract the single particle intensity
+        arI1 = array('f', [0] * Nx * Ny)
+        srwl.CalcIntFromElecField(arI1, self.wfr, 6, 0, 3,
+                                  self.wfr.mesh.eStart, 0, 0)
+        B = np.reshape(arI1, [Ny, Nx])
+
+        hf.create_dataset('I', data = B)
+
+        hf.close()
+
 
 class F2_Single_Magnet_Multiple_Color_Sim(F2_Single_Magnet_Sim):
     def __init__(self, Nx=2 ** 10, goal_Bend_Angle=6.0, meshZ=2.0,
