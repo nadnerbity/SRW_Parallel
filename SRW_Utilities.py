@@ -109,7 +109,48 @@ def build_two_magnets(B0, L_Bend, L_edge, entry_drift, Bend_sep):
                             array('d', zcID))
     return magFldCnt
 
+def build_two_magnets_dogleg(B0, L_Bend, L_edge, entry_drift, Bend_sep):
 
+    """
+    # This function builds a SRW magnetic field container containing two
+    # identical magnets for simulating edge radiation interference. This
+    builds a dogleg configuration where the strips overlap.
+
+    :param B0: Magnetic field strength [Tesla]
+    :param L_Bend: Length of the flattop region of the bend magnetic field [
+    meters]
+    :param L_edge: Length of the magnetic field edges [meters]
+    :param entry_drift: Drift from simulation start to the first magnet edge
+    [meters]
+    :param Bend_sep: Separation between the middle magnets, not including
+    edges [meters]
+    :return: magFldCont - SRW magnetic field container for the magnets
+    """
+    bend1 = SRWLMagFldM()
+    bend1.m = 1  # 1 defines a dipole
+    bend1.G = -B0  # Field strength of the bend in Tesla, since it is a dipole
+    bend1.Leff = L_Bend  # Effective dipole length, in meters.
+    bend1.Ledge = L_edge  # Edge length in meters.the ID)
+
+    bend2 = SRWLMagFldM()
+    bend2.m = 1  # 1 defines a dipole
+    bend2.G = B0  # Field strength of the bend in Tesla, since it is a dipole
+    bend2.Leff = L_Bend  # Effective dipole length, in meters.
+    bend2.Ledge = L_edge  # Edge length in meters.the ID)
+
+    z1 = entry_drift + L_Bend /2.0 + L_edge
+    z2 = z1 + L_Bend + Bend_sep + L_edge
+
+    # Offsets for all the magnetic fields in the magFldCnt.
+    bendy = [bend1, bend2]
+    xcID = [0.0]*2
+    ycID = [0.0]*2
+    zcID = [z1, z2]
+
+    # Put everything together.  These are the two fields.
+    magFldCnt = SRWLMagFldC(bendy, array('d', xcID), array('d', ycID),
+                            array('d', zcID))
+    return magFldCnt
 
 def set_mag_strength_by_bend_angle(goal_Bend_Angle, B0, partTraj_1,
                                    magFldCnt, L_Bend, L_edge, entry_drift,
@@ -152,6 +193,57 @@ def set_mag_strength_by_bend_angle(goal_Bend_Angle, B0, partTraj_1,
         # Update the magnetic field to the new value.
         # magFldCnt = build_single_magnet(B0, L_Bend, L_edge, entry_drift)
         magFldCnt = build_two_magnets(B0, L_Bend, L_edge, entry_drift, Bend_sep)
+
+        # Run the updated particle trajectory
+        partTraj_1 = srwl.CalcPartTraj(partTraj_1, magFldCnt, trajPrecPar)
+
+    print('Final magnetic field strength: ' + str(B0) + ' [T]')
+
+    return partTraj_1, magFldCnt
+
+
+def set_mag_strength_by_bend_angle_dogleg(goal_Bend_Angle, B0, partTraj_1,
+                                   magFldCnt, L_Bend, L_edge, entry_drift,
+                                   Bend_sep, trajPrecPar):
+    """
+    When the entrance and exit edge fields change length, the total bend angle
+    will change. This function sets the field strength such that the bend angle
+     is the user input value.
+
+    # This function is written for pairs of bend magnets and sets the angle and
+    # offset to zero in the middle of the two magnets.
+
+    :param goal_Bend_Angle: The desired bend angle, in degrees
+    :param B0: Magnetic field of the flat region of the bend. [Tesla]
+    :param partTraj_1: An SRW particle trajectory variable
+    :param magFldCnt: The magnetic field container with the magnetic system.
+    :param L_Bend: Length of the flattop of the bend magnet [meters]
+    :param L_edge: Length of the edge of the magnetic field [meters]
+    :param entry_drift: Drift from simulation start to the first magnet edge
+    [meters]
+    :param Bend_sep: Separation between the middle magnets, not including
+    edges [meters]
+    :param trajPrecPar: Precision parameter for the trajectory calculations.
+    :return: partTraj_1, magFldCnt
+    """
+    print('   Setting the magnetic field strength to match bend angle ... ')
+
+
+    # Looks like it takes three iterations to converge.
+    N = 3
+    for i in range(N):
+        # Extract the current bend angle.
+        # partTraj_1.np//2 is what make sthe function set the bend angle in
+        # the middle of the magFldCnt
+        curr_Bend_Angle = partTraj_1.arXp[partTraj_1.np//2] * 180 / pi
+
+        delta_Theta = (curr_Bend_Angle - goal_Bend_Angle) / curr_Bend_Angle
+        B0 = B0 * (1 - delta_Theta)
+
+        # Update the magnetic field to the new value.
+        # magFldCnt = build_single_magnet(B0, L_Bend, L_edge, entry_drift)
+        magFldCnt = build_two_magnets_dogleg(B0, L_Bend, L_edge, entry_drift,
+                                       Bend_sep)
 
         # Run the updated particle trajectory
         partTraj_1 = srwl.CalcPartTraj(partTraj_1, magFldCnt, trajPrecPar)

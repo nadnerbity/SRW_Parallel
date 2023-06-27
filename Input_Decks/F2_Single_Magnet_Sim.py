@@ -97,7 +97,8 @@ class F2_Single_Magnet_Sim:
     # Precision for SR integration
     srPrec 		    = 0.05 #0.05
 
-    def __init__(self, Nx=2**10, goal_Bend_Angle = 6.0, meshZ=2.0, ph_lam=0.65e-6):
+    def __init__(self, Nx=2**10, goal_Bend_Angle = 6.0, meshZ=2.0,
+                 ph_lam=0.65e-6, L_bend = 0.204):
         """
 
         :param Nx: Number of grid cells in X and Y for the wavefront
