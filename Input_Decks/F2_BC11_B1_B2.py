@@ -53,9 +53,11 @@ if __name__ == '__main__':
     comb2 = F2_Single_Magnet_Multiple_Color_Sim(Nx=NN,
                                                goal_Bend_Angle=.105 * 180 / np.pi,
                                                meshZ=secon_edge_to_window,
-                                               ph_lam=0.60e-6)
+                                               ph_lam=0.60e-6, Ne=len(colors),
+                                               p=(colors[0], colors[-1]))
     # Ensure the mesh has the correct number of wavelengths
-    comb2.build_wavefront_mesh(Ne=len(colors), p=(colors[0], colors[-1]))
+    # comb2.build_wavefront_mesh(Ne=len(colors), p=(colors[0], colors[-1]))
+    comb2.build_wavefront_mesh()
 
     for L in sim_list:
         a_sim = F2_Single_Magnet_Single_Color_Sim(Nx=NN,
