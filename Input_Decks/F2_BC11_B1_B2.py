@@ -41,8 +41,60 @@ if __name__ == '__main__':
     sim_title = __file__
 
     # Create the simulation
-    first_edge_to_window = 3.16 # in meters
-    secon_edge_to_window = 0.76  # in meters
+    first_edge_to_window = 2.98 # in meters
+    secon_edge_to_window = 0.58  # in meters
+
+    ###########
+    # Create the simulation
+    NN = 2 ** 11
+    wavelength = 400
+    Lbend = 0.204
+    Ledge = 0.05
+    beamenergy = 0.330
+    Ne = 18
+    p = (488.0e-9, 512.0e-9)
+    windowToLen = 0.44
+    windowApp = 0.0508
+
+    a_sim = F2_Single_Magnet_Multiple_Color_Sim(Nx=NN,
+                                                goal_Bend_Angle=
+                                                1 * .105 * 180 /
+                                                np.pi,
+                                                meshZ=first_edge_to_window,
+                                                ph_lam=wavelength * 1e-9,
+                                                L_bend=Lbend,
+                                                L_edge=Ledge,
+                                                beam_energy=beamenergy,
+                                                Ne=Ne,
+                                                p=p)
+    a_sim.run_SR_calculation()
+    a_sim.propagate_wavefront_through_window(appOne=windowApp,
+                                             windowToLens=windowToLen)
+    a_sim.resize_wavefront()
+
+    b_sim = F2_Single_Magnet_Multiple_Color_Sim(Nx=NN,
+                                                goal_Bend_Angle=
+                                                1 * .105 * 180 /
+                                                np.pi,
+                                                meshZ=secon_edge_to_window,
+                                                ph_lam=wavelength * 1e-9,
+                                                L_bend=Lbend,
+                                                L_edge=Ledge,
+                                                beam_energy=beamenergy,
+                                                Ne=Ne,
+                                                p=p)
+    b_sim.run_SR_calculation()
+    b_sim.propagate_wavefront_through_window(appOne=windowApp,
+                                             windowToLens=windowToLen)
+    b_sim.resize_wavefront()
+
+    # b_sim.match_wavefront_mesh_dimensions(a_sim.wfr)
+    a_sim.add_wavefront(b_sim.wfr)
+
+    # plot_SRW_intensity(a_sim.wfr, title="One of Many Colors", fig_num=2, N=1)
+    plot_SRW_fluence(a_sim.wfr, title=sim_title)
+
+    # write_sim_to_disc(a_sim, sim_title)
 
     # colors = np.linspace(488e-9, 513e-9, 10)
     # mags = [[first_edge_to_window, -1.0], [secon_edge_to_window, -1.0]]
@@ -88,53 +140,3 @@ if __name__ == '__main__':
     # plt.title('Ne = ' + str(comb2.wfr.mesh.ne)
     #           + ', ' + str(colors[0]) + ', ' + str(colors[-1]) +
     #           ', Nx = ' + str(comb2.wfr.mesh.nx))
-
-
-    ###########
-    # Create the simulation
-    NN = 2**10
-    wavelength = 400
-    Lbend = 0.204
-    Ledge = 0.05
-    beamenergy = 0.330
-    Ne = 18
-    p = (488.0e-9, 512.0e-9)
-
-    a_sim = F2_Single_Magnet_Multiple_Color_Sim(Nx=NN,
-                                              goal_Bend_Angle=
-                                              1 * .105 * 180 /
-                                              np.pi,
-                                              meshZ=first_edge_to_window,
-                                              ph_lam=wavelength*1e-9,
-                                              L_bend=Lbend,
-                                              L_edge=Ledge,
-                                              beam_energy = beamenergy,
-                                              Ne=Ne,
-                                              p=p)
-    a_sim.run_SR_calculation()
-    a_sim.propagate_wavefront_through_window(appOne=0.0508, windowToLens=0.26)
-    a_sim.resize_wavefront()
-
-    b_sim = F2_Single_Magnet_Multiple_Color_Sim(Nx=NN,
-                                              goal_Bend_Angle=
-                                              1 * .105 * 180 /
-                                              np.pi,
-                                              meshZ=secon_edge_to_window,
-                                              ph_lam=wavelength*1e-9,
-                                              L_bend=Lbend,
-                                              L_edge=Ledge,
-                                              beam_energy = beamenergy,
-                                              Ne=Ne,
-                                              p=p)
-    b_sim.run_SR_calculation()
-    b_sim.propagate_wavefront_through_window(appOne=0.0508, windowToLens=0.26)
-    b_sim.resize_wavefront()
-
-    # b_sim.match_wavefront_mesh_dimensions(a_sim.wfr)
-    a_sim.add_wavefront(b_sim.wfr)
-
-    # plot_SRW_intensity(a_sim.wfr, title="One of Many Colors", fig_num=2, N=1)
-    plot_SRW_fluence(a_sim.wfr, title="All Colors")
-    # plot_SRW_fluence(b_sim.wfr, title="All Colors", fig_num=5)
-
-    # write_sim_to_disc(comb2, sim_title)

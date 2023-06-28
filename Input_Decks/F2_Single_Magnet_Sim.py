@@ -84,7 +84,7 @@ class F2_Single_Magnet_Sim:
 
         # Entry and exit drifts, in meters. The simulation can't start in a
         # magnetic field.
-        self.entry_drift = 0.3
+        self.entry_drift = 0.2 # 0.3
 
         # Set the desired integration time.
         self.goalCtEnd = 1.0 * self.L_bend + 2.0 * self.L_edge + 2.0 * self.entry_drift
