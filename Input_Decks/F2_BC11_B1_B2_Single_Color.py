@@ -45,13 +45,19 @@ if __name__ == '__main__':
     secon_edge_to_window = 0.76  # in meters
     NN = 2**8
     wavelength = 400
+    Lbend = 0.204
+    Ledge = 0.05
+    beamenergy = 0.330
 
     a_sim = F2_Single_Magnet_Single_Color_Sim(Nx=NN,
                                               goal_Bend_Angle=
                                               1 * .105 * 180 /
                                               np.pi,
                                               meshZ=first_edge_to_window,
-                                              ph_lam=wavelength*1e-9)
+                                              ph_lam=wavelength*1e-9,
+                                              L_bend=Lbend,
+                                              L_edge=Ledge,
+                                              beam_energy = beamenergy)
     a_sim.resize_wavefront(newX=10.e-3, newY=10.0e-3)
     a_sim.run_SR_calculation()
 
@@ -60,7 +66,10 @@ if __name__ == '__main__':
                                               1 * .105 * 180 /
                                               np.pi,
                                               meshZ=secon_edge_to_window,
-                                              ph_lam=wavelength*1e-9)
+                                              ph_lam=wavelength*1e-9,
+                                              L_bend=Lbend,
+                                              L_edge=Ledge,
+                                              beam_energy = beamenergy)
     b_sim.resize_wavefront(newX=10.e-3, newY=10.0e-3)
     b_sim.run_SR_calculation()
 
@@ -70,5 +79,5 @@ if __name__ == '__main__':
     plot_SRW_intensity(a_sim.wfr, title="Single Color")
 
 
-    a_sim.dump_wavefront_to_h5(filename=sim_title.split(".")[0] + "_" + str(wavelength) + "_nm.h5")
+    # a_sim.dump_wavefront_to_h5(filename=sim_title.split(".")[0] + "_" + str(wavelength) + "_nm.h5")
 

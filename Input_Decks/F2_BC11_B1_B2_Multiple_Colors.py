@@ -44,9 +44,12 @@ if __name__ == '__main__':
     first_edge_to_window = 3.16 # in meters
     secon_edge_to_window = 0.76  # in meters
     NN = 2**8
-    wavelength = 450
-    NNe = 8
-    pRange = (450e-9, 500e-9)
+    wavelength = 400
+    Lbend = 0.204
+    Ledge = 0.05
+    beamenergy = 0.330
+    Ne = 4
+    p = (400.0e-9, 800.0e-9)
 
     a_sim = F2_Single_Magnet_Multiple_Color_Sim(Nx=NN,
                                               goal_Bend_Angle=
@@ -54,9 +57,12 @@ if __name__ == '__main__':
                                               np.pi,
                                               meshZ=first_edge_to_window,
                                               ph_lam=wavelength*1e-9,
-                                              Ne = NNe,
-                                              p=pRange)
-    a_sim.resize_wavefront(newX=10.e-3, newY=10.0e-3)
+                                              L_bend=Lbend,
+                                              L_edge=Ledge,
+                                              beam_energy = beamenergy,
+                                              Ne=4,
+                                              p=p)
+    # a_sim.resize_wavefront(newX=10.e-3, newY=10.0e-3)
     a_sim.run_SR_calculation()
 
     b_sim = F2_Single_Magnet_Multiple_Color_Sim(Nx=NN,
@@ -65,17 +71,19 @@ if __name__ == '__main__':
                                               np.pi,
                                               meshZ=secon_edge_to_window,
                                               ph_lam=wavelength*1e-9,
-                                              Ne = NNe,
-                                              p=pRange)
-    b_sim.resize_wavefront(newX=10.e-3, newY=10.0e-3)
+                                              L_bend=Lbend,
+                                              L_edge=Ledge,
+                                              beam_energy = beamenergy,
+                                              Ne=4,
+                                              p=(400.0e-9, 800.0e-9))
+    # b_sim.resize_wavefront(newX=10.e-3, newY=10.0e-3)
     b_sim.run_SR_calculation()
 
 
     a_sim.add_wavefront(b_sim.wfr)
 
-    plot_SRW_intensity(a_sim.wfr, title="Single Color", N = 2)
-    plot_SRW_fluence(a_sim.wfr, title="Fluence")
+    plot_SRW_intensity(a_sim.wfr, title="One of Many Colors", fig_num=2, N=1)
+    plot_SRW_fluence(a_sim.wfr, title="All Colors")
 
-
-    a_sim.dump_wavefront_to_h5(filename=sim_title.split(".")[0] + "_" + str(wavelength) + "_nm.h5")
+    # a_sim.dump_wavefront_to_h5(filename=sim_title.split(".")[0] + "_" + str(wavelength) + "_nm.h5")
 

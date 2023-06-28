@@ -56,7 +56,8 @@ if __name__ == '__main__':
                                                meshZ=secon_edge_to_window,
                                                ph_lam=0.60e-6)
     # Ensure the mesh has the correct number of wavelengths
-    comb2.build_wavefront_mesh(Ne=len(colors), p=(colors[0], colors[-1]))
+    # comb2.build_wavefront_mesh(Ne=len(colors), p=(colors[0], colors[-1]))
+    comb2.build_wavefront_mesh()
 
     for L in sim_list:
         a_sim = F2_Single_Magnet_Single_Color_Sim(Nx=NN,

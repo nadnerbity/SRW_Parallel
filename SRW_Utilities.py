@@ -449,20 +449,33 @@ def convert_matrix_fields_to_srw_linear_fields(II, wfr1):
     return wfr1
 
 
-def plot_SRW_intensity(wfr1, fig_num=2, title="SRW Intensity"):
-    Nx = wfr1.mesh.nx
-    Ny = wfr1.mesh.ny
+# Plot the intensity of a specific frequency of an SRW wavefront
+def plot_SRW_intensity(wfr1, fig_num=2, title="SRW Intensity", N = 1):
+    if N > wfr1.mesh.ne:
+        print('Nothing to plot. N is > ', str(wfr1.mesh.ne) ,', N must be <',
+              str(wfr1.mesh.ne))
+        return
+
+    if N < 1:
+        print('Nothing to plot. N is < 1, N must  be >= 1.')
+        return
+
+    # The frequency to plot
+    if wfr1.mesh.ne > 1:
+        eToPlot = wfr1.mesh.eStart - (N-1)*(wfr1.mesh.eStart - wfr1.mesh.eFin) / \
+              (wfr1.mesh.ne - 1)
+    else:
+        eToPlot = wfr1.mesh.eStart
+
     xMin = 1e3 * wfr1.mesh.xStart
     xMax = 1e3 * wfr1.mesh.xFin
     yMin = 1e3 * wfr1.mesh.yStart
     yMax = 1e3 * wfr1.mesh.yFin
-    # xgv = np.linspace(xMin, xMax, Nx)
-    # ygv = np.linspace(yMin, yMax, Ny)
 
     # Extract the single particle intensity
     arI1 = array('f', [0] * wfr1.mesh.nx * wfr1.mesh.ny)
-    srwl.CalcIntFromElecField(arI1, wfr1, 6, 0, 3, wfr1.mesh.eStart, 0, 0)
-    B = np.reshape(arI1, [Ny, Nx])
+    srwl.CalcIntFromElecField(arI1, wfr1, 6, 0, 3, eToPlot, 0, 0)
+    B = np.reshape(arI1, [wfr1.mesh.ny, wfr1.mesh.nx])
 
     plt.figure(fig_num, facecolor='w')
 
@@ -471,6 +484,31 @@ def plot_SRW_intensity(wfr1, fig_num=2, title="SRW Intensity"):
     plt.xlabel("x [mm]", fontsize=20)
     plt.ylabel("y [mm]", fontsize=20)
     plt.clim([0, np.max(B)])
+    plt.title(title, fontsize=20)
+    plt.set_cmap('jet')
+    plt.tight_layout()
+
+# Plot the fluence of an SRW simulation. This will integrate over all
+# frequencies.
+def plot_SRW_fluence(wfr1, fig_num=4, title="SRW Fluence"):
+
+    xMin = 1e3 * wfr1.mesh.xStart
+    xMax = 1e3 * wfr1.mesh.xFin
+    yMin = 1e3 * wfr1.mesh.yStart
+    yMax = 1e3 * wfr1.mesh.yFin
+
+    # Extract the single particle intensity
+    arI1 = array('f', [0] * wfr1.mesh.nx * wfr1.mesh.ny)
+    srwl.CalcIntFromElecField(arI1, wfr1, 6, 7, 3, wfr1.mesh.eFin, 0, 0)
+    B = np.reshape(arI1, [wfr1.mesh.ny, wfr1.mesh.nx])
+
+    plt.figure(fig_num, facecolor='w')
+
+    plt.imshow(abs(B), extent=[xMin, xMax, yMin, yMax])
+    plt.gca().set_aspect((xMax - xMin) / (yMax - yMin))
+    plt.xlabel("x [mm]", fontsize=20)
+    plt.ylabel("y [mm]", fontsize=20)
+    plt.clim([0, np.max(abs(B))])
     plt.title(title, fontsize=20)
     plt.set_cmap('jet')
     plt.tight_layout()

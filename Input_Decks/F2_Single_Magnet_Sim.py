@@ -45,60 +45,11 @@ plt.ion()
 
 class F2_Single_Magnet_Sim:
 
-    # Magnet parameters --------------------------------------------------------
-    # The design bend angle, from theory or simulation. In degrees.
-    # goal_Bend_Angle = 0.105 * 180 / np.pi
 
-    # Magnetic field strength in Tesla. This should be negative.
-    B0 = -0.6
-
-    # Length of the 'hard' edge of the dipoles in meters.
-    L_bend = 0.204
-
-    # Length of the field edge in meters.
-    L_edge = 0.05
-
-    # Entry and exit drifts, in meters. The simulation can't start in a
-    # magnetic field.
-    entry_drift = 0.3
-
-    # Distance between the magnet edges if they had zero length edges.
-    # Subtract off L_edge because the measurements/Lucretia files don't
-    # include edges in distance. The 1.6 is a fudge factor for in simulation
-    # length vs the defined length.
-    Bend_sep = 0.93 - 1.6 * 2 * L_edge
-
-    goalCtEnd = 1.0 * L_bend + 2.0 * L_edge + 2.0 * entry_drift
-
-    # Initial beam parameters --------------------------------------------------
-    # Beam Parameters.
-    beam_energy	= 0.330 # Beam energy in GeV
-    x_initial 	= 0.0 # Initial x offset in meters
-    xp_initial 	= 0.0 # initial xprime in rad
-    z_initial 	= 0.0 # In meters
-    # Number of points to compute the particle trajectory.
-    npTraj = 2 ** 14
-
-
-    # Wavefront mesh grid parameters -------------------------------------------
-    # Wavefront parameters
-    B3_phys_edge    = entry_drift + 1.6*3*L_edge + L_bend + Bend_sep # The
-    # physical edge of B3 (i.e. where the field has just become flat.)
-    zSrCalc 	    = B3_phys_edge + 1.045 # Distance from sim start to
-    # calc SR. [m]
-    xMiddle		    = 0.0 # middle of window in X to calc SR [m]
-    xWidth 		    = 0.08*1.0 # width of x window. [m]
-    yMiddle 	    = 0.00 # middle of window in Y to calc SR [m]
-    yWidth 		    = xWidth # width of y window. [m]
-
-    # SR integration flags.
-    use_termin 		= 1 #1 #Use "terminating terms" (i.e. asymptotic expansions
-    # at  zStartInteg and zEndInteg) or not (1 or 0 respectively)
-    # Precision for SR integration
-    srPrec 		    = 0.05 #0.05
 
     def __init__(self, Nx=2**10, goal_Bend_Angle = 6.0, meshZ=2.0,
-                 ph_lam=0.65e-6, L_bend = 0.204):
+                 ph_lam=0.65e-6, L_bend = 0.204, L_edge = 0.05,
+                 beam_energy = 0.330):
         """
 
         :param Nx: Number of grid cells in X and Y for the wavefront
@@ -116,6 +67,54 @@ class F2_Single_Magnet_Sim:
 
         # Set the wavelength
         self.photon_lam = ph_lam
+
+        # Length of the 'hard' edge of the dipoles in meters.
+        self.L_bend = L_bend
+
+        # Length of the field edge in meters.
+        self.L_edge = L_edge
+
+        # Beam energy in GeV
+        self.beam_energy = beam_energy
+
+        # Magnet parameters --------------------------------------------------------
+
+        # Magnetic field strength in Tesla. This should be negative.
+        self.B0 = -0.6
+
+        # Entry and exit drifts, in meters. The simulation can't start in a
+        # magnetic field.
+        self.entry_drift = 0.3
+
+        # Set the desired integration time.
+        self.goalCtEnd = 1.0 * self.L_bend + 2.0 * self.L_edge + 2.0 * self.entry_drift
+
+        # Initial beam parameters --------------------------------------------------
+        # Beam Parameters.
+
+        self.x_initial = 0.0  # Initial x offset in meters
+        self.xp_initial = 0.0  # initial xprime in rad
+        self.z_initial = 0.0  # In meters
+        # Number of points to compute the particle trajectory.
+        self.npTraj = 2 ** 14
+
+        # Wavefront mesh grid parameters -------------------------------------------
+        # Wavefront parameters
+        # The physical edge of B3 (i.e. where the field has just become flat.)
+        # self.B3_phys_edge = self.entry_drift + 1.6 * 3 * self.L_edge + self.L_bend + self.Bend_sep
+        # Distance from sim start to calc SR. [m]
+        # self.zSrCalc = self.B3_phys_edge + 1.045
+
+        self.xMiddle = 0.0  # middle of window in X to calc SR [m]
+        self.xWidth = 0.08 * 1.0  # width of x window. [m]
+        self.yMiddle = 0.00  # middle of window in Y to calc SR [m]
+        self.yWidth = self.xWidth  # width of y window. [m]
+
+        # SR integration flags.
+        self.use_termin = 1  # 1 #Use "terminating terms" (i.e. asymptotic expansions
+        # at  zStartInteg and zEndInteg) or not (1 or 0 respectively)
+        # Precision for SR integration
+        self.srPrec = 0.05  # 0.05
 
         # Set the Z location of the mesh with respect to the first magnet edge
         self.zSrCalc = meshZ + self.entry_drift + 1.6 * self.L_edge
@@ -374,6 +373,8 @@ class F2_Single_Magnet_Sim:
         print('Input Nx = Ny = ', self.wfr.mesh.nx, self.wfr.mesh.ny)
         print('Input xWdith ', self.wfr.mesh.xFin - self.wfr.mesh.xStart, ' [m]')
         print('Input yWdith ', self.wfr.mesh.yFin - self.wfr.mesh.yStart, ' [m]')
+        print('eStart: ', self.p[0], ' eFin: ', self.p[1], ' ne : ',
+              self.wfr.mesh.ne)
         return "\n"
 
     def lineout_in_y(self, nx):
@@ -505,11 +506,16 @@ class F2_Single_Magnet_Sim:
 
 class F2_Single_Magnet_Single_Color_Sim(F2_Single_Magnet_Sim):
     def __init__(self, Nx=2**10, goal_Bend_Angle = 6.0, meshZ=2.0,
-                 ph_lam=0.60e-6):
-        super(F2_Single_Magnet_Single_Color_Sim, self).__init__(Nx,
-                                                   goal_Bend_Angle,
-                                                   meshZ,
-                                                   ph_lam)
+                 ph_lam=0.60e-6, L_bend = 0.204, L_edge = 0.05,
+                 beam_energy = 0.330):
+        super(F2_Single_Magnet_Single_Color_Sim, self).__init__(Nx=Nx,
+                                                                goal_Bend_Angle=goal_Bend_Angle,
+                                                                meshZ=meshZ,
+                                                                ph_lam=ph_lam,
+                                                                L_bend=L_bend,
+                                                                L_edge = L_edge,
+                                                                beam_energy =
+                                                                beam_energy)
         # Setup the wavefront
         self.wfr = self.build_wavefront_mesh()
 
@@ -551,14 +557,18 @@ class F2_Single_Magnet_Single_Color_Sim(F2_Single_Magnet_Sim):
         return wfr1
 
 
-
 class F2_Single_Magnet_Multiple_Color_Sim(F2_Single_Magnet_Sim):
-    def __init__(self, Nx=2 ** 10, goal_Bend_Angle=6.0, meshZ=2.0,
-                 ph_lam=0.60e-6, Ne = 2, p=(500.0e-9, 600e-9)):
-        super(F2_Single_Magnet_Multiple_Color_Sim, self).__init__(Nx,
-                                                                goal_Bend_Angle,
-                                                                meshZ,
-                                                                ph_lam)
+    def __init__(self, Nx=2**10, goal_Bend_Angle = 6.0, meshZ=2.0,
+                 ph_lam=0.60e-6, L_bend = 0.204, L_edge = 0.05,
+                 beam_energy = 0.330, Ne = 2, p=(500.0e-9, 600e-9)):
+        super(F2_Single_Magnet_Multiple_Color_Sim, self).__init__(Nx=Nx,
+                                                                goal_Bend_Angle=goal_Bend_Angle,
+                                                                meshZ=meshZ,
+                                                                ph_lam=ph_lam,
+                                                                L_bend=L_bend,
+                                                                L_edge = L_edge,
+                                                                beam_energy =
+                                                                beam_energy)
 
         self.Ne = Ne
         self.p  = p
