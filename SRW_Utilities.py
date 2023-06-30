@@ -513,6 +513,18 @@ def plot_SRW_fluence(wfr1, fig_num=4, title="SRW Fluence"):
     plt.set_cmap('jet')
     plt.tight_layout()
 
+# Return the fluence of an SRW simulation. This will integrate over all
+# frequencies.
+def return_SRW_fluence(wfr1):
+
+
+    # Extract the single particle intensity
+    arI1 = array('f', [0] * wfr1.mesh.nx * wfr1.mesh.ny)
+    srwl.CalcIntFromElecField(arI1, wfr1, 6, 7, 3, wfr1.mesh.eFin, 0, 0)
+    B = np.reshape(arI1, [wfr1.mesh.ny, wfr1.mesh.nx])
+
+    return B
+
 def plot_two_SRW_intensity(wfr1, wfr2, title1="Input 1", title2="Input 2",
                            fig_num=2):
     Nx = wfr1.mesh.nx

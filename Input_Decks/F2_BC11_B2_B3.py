@@ -53,7 +53,8 @@ if __name__ == '__main__':
     Ledge = 0.05
     beamenergy = 0.330
     Ne = 18
-    p = (537.0e-9, 563.0e-9)
+    # p = (537.0e-9, 563.0e-9) # With 25 nm filter
+    p = (400.0e-9, 700.0e-9) # Camera only.
     windowToLen = 0.215
     windowApp = 0.038
 
