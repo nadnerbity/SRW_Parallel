@@ -51,7 +51,7 @@ if __name__ == '__main__':
     Lbend = 0.204
     Ledge = 0.05
     beamenergy = 0.330
-    Ne = 18
+    Ne = 2
     p = (488.0e-9, 512.0e-9)
     windowToLen = 0.44
     windowApp = 0.0508

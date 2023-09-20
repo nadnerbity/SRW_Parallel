@@ -44,12 +44,14 @@ if __name__ == '__main__':
     # Define a colormap
     cmap0 = LinearSegmentedColormap.from_list('', ['white', 'darkblue'])
 
+    # Load the SRW simulation that has many wavelengths for the simulations
     file_dir = os.path.dirname(os.path.realpath(__file__))
     file_dir = '/'.join(file_dir.split('/')[:-1])
     sim1name = file_dir + '/F2_BC11_B2_B3.py'
     sim1 = load_sim_from_disc(sim1name)
     sim1F = np.abs(return_SRW_fluence(sim1.wfr))
 
+    # Load an SRW simulation that has the narrow bandwidth of the 25 nm filter
     sim2name = file_dir + '/F2_BC11_B2_B3_Camera_BW.py'
     sim2 = load_sim_from_disc(sim2name)
     sim2F = np.abs(return_SRW_fluence(sim2.wfr))
@@ -113,7 +115,7 @@ if __name__ == '__main__':
     plt.tight_layout()
 
     ############################################################################
-    # Compare simulation data to experimental data
+    # Compare simulation data to experimental data (no filter data)
     expData = scipy.io.loadmat('ProfMon-PROF_LI11_342-2022-11-21-173241.mat')['data'][0, 0][1]
     rotatedExpData = rotate(expData, angle=94)
     XE = np.linspace(1, rotatedExpData.shape[1], rotatedExpData.shape[
@@ -165,4 +167,55 @@ if __name__ == '__main__':
     plt.xlabel("x [mm]", fontsize=20)
     plt.ylabel("Intensity [arb]", fontsize=20)
     plt.legend(('Experiment', 'Simulation'))
+    plt.tight_layout()
+
+    ############################################################################
+    # Compare simulation data to experimental data (no filter data)
+    # Apparently the matlab version changed between July 2023 and the file
+    # above (November 2022) because you have to load this file a different way.
+
+    f = h5py.File('ProfMon-PROF_LI11_342-2023-07-26-134531.mat', 'r')
+    dset = f['data']['img'][:,:]
+    expDataWithFilter = np.zeros(dset.shape)
+    for i in range(dset[:,0].shape[0]):
+        # print(dset[i,:].shape)
+        expDataWithFilter[i, :] = dset[i, :]
+
+    plt.figure(23423423)
+    plt.imshow(expDataWithFilter)
+
+    # expDataWithFilter = scipy.io.loadmat(
+    #     'ProfMon-PROF_LI11_342-2023-07-26-134531.mat')['data'][0, 0][1]
+    rotatedExpDataWithFilter = rotate(expDataWithFilter, angle=94+82)
+    rotatedExpDataWithFilter = np.roll(rotatedExpDataWithFilter, 90, axis=0)
+    rotatedExpDataWithFilter = np.roll(rotatedExpDataWithFilter, 65, axis=1)
+    # Larger numbers move it right
+    XE = np.linspace(1, rotatedExpDataWithFilter.shape[1], rotatedExpDataWithFilter.shape[
+        1])*3.75e-3
+    XE = XE - np.mean(XE)
+    YE = np.linspace(1, rotatedExpDataWithFilter.shape[0], rotatedExpDataWithFilter.shape[
+        1])*3.75e-3
+    YE = YE - np.mean(YE)
+
+    plt.figure(988, facecolor='w', figsize=(8, 10))
+
+    plt.subplot(2,1,1)
+    plt.imshow(rotatedExpDataWithFilter, extent=[XE[0], XE[-1], YE[0], YE[-1]],
+               cmap=cmap0)
+    plt.xlabel("x [mm]", fontsize=20)
+    plt.ylabel("y [mm]", fontsize=20)
+    plt.title('Experiment with 25 nm Filter', fontsize=20)
+    plt.clim([0, np.max(rotatedExpDataWithFilter)/4])
+    plt.xlim([-0.5, 0.5])
+    plt.ylim([-0.5, 0.5])
+
+    plt.subplot(2,1,2)
+    plt.imshow(sim1F, extent=[xMin2, xMax2, yMin2, yMax2], cmap=cmap0)
+    plt.xlabel("x [mm]", fontsize=20)
+    plt.ylabel("y [mm]", fontsize=20)
+    plt.clim([0, np.max(sim2F)/4])
+    plt.title('Simulation with 25 nm Filter', fontsize=20)
+    plt.xlim([-0.5, 0.5])
+    plt.ylim([-0.5, 0.5])
+
     plt.tight_layout()
